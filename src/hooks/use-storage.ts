@@ -7,12 +7,14 @@ import {
   TaskStatus,
   SimulationResult,
   AdaptiveProposal,
+  AdaptiveTask,
   TopicMastery,
 } from "@/lib/types";
 import * as storage from "@/lib/storage";
 import { calculateAllMasteries } from "@/lib/adaptive/mastery";
-import { checkAfterExercise, checkAfterSimulation, checkAfterSkip } from "@/lib/adaptive/engine";
+import { checkAfterExercise, checkAfterSimulation, checkAfterSkip, checkMissedDay, checkSM2Reviews, buildAdaptiveTasks } from "@/lib/adaptive/engine";
 import { PlanTask } from "@/lib/types";
+import { PLAN_DATA } from "@/lib/plan-data";
 
 // Single combined state to avoid race conditions between hydration and data loading
 function useLocalStorage<T>(_key: string, reader: () => T): { data: T; setData: (v: T) => void; hydrated: boolean } {
@@ -53,17 +55,34 @@ export function useCompletions() {
     () => storage.getCompletions()
   );
 
+  // On hydration: run SM-2 review check for all topics
+  useEffect(() => {
+    if (!hydrated) return;
+    const today = new Date().toISOString().split("T")[0];
+    const all = storage.getCompletions();
+    if (all.length === 0) return;
+    const existing = storage.getAdaptiveHistory();
+    const proposal = checkSM2Reviews(all, existing, today);
+    if (proposal) storage.addAdaptiveProposal(proposal);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
   const addCompletion = useCallback(
     (c: ExerciseCompletion) => {
       storage.addCompletion(c);
       const updated = storage.getCompletions();
       setCompletionsState(updated);
 
-      // Check adaptive trigger
+      // Mastery / trend check
       const proposal = checkAfterExercise(updated, c);
-      if (proposal) {
-        storage.addAdaptiveProposal(proposal);
-      }
+      if (proposal) storage.addAdaptiveProposal(proposal);
+
+      // SM-2 review check after each completion (new reviews may have become due)
+      const today = new Date().toISOString().split("T")[0];
+      const existing = storage.getAdaptiveHistory();
+      const sm2Proposal = checkSM2Reviews(updated, existing, today);
+      if (sm2Proposal) storage.addAdaptiveProposal(sm2Proposal);
+
       return proposal;
     },
     [setCompletionsState]
@@ -77,6 +96,60 @@ export function useTaskStatuses() {
     "taskStatus",
     () => storage.getTaskStatuses()
   );
+
+  const [autoSkippedCount, setAutoSkippedCount] = useState(0);
+
+  // Auto-detect missed past days ("Tag war zu viel")
+  useEffect(() => {
+    if (!hydrated) return;
+    const today = new Date().toISOString().split("T")[0];
+    const currentStatuses = storage.getTaskStatuses();
+    const completions = storage.getCompletions();
+    const existingHistory = storage.getAdaptiveHistory();
+    let changed = false;
+
+    for (const day of PLAN_DATA) {
+      if (day.date >= today) break;
+      if (day.tasks.length === 0 || day.type === "exam") continue;
+
+      // Skip if any task is completed
+      const anyCompleted = day.tasks.some((t) => currentStatuses[t.id]?.completed);
+      if (anyCompleted) continue;
+
+      // Mark all non-completed tasks as carriedOver.
+      // This also migrates old auto-skipped tasks (skipped:true without carriedOver)
+      // to the new carriedOver model. Manually skipped tasks get the same treatment —
+      // they appear in Nachzuholen and the user can skip them again from there.
+      const allCarriedOver = day.tasks.every((t) => currentStatuses[t.id]?.carriedOver);
+      if (!allCarriedOver) {
+        for (const task of day.tasks) {
+          if (!currentStatuses[task.id]?.completed) {
+            storage.setTaskStatus(task.id, { completed: false, skipped: false, carriedOver: true });
+          }
+        }
+        changed = true;
+      }
+
+      // Generate proposal only once per date
+      const alreadyHasProposal = existingHistory.some(
+        (p) => p.triggerDetails.includes(day.date)
+      );
+      if (!alreadyHasProposal) {
+        const proposal = checkMissedDay(day.tasks, day.date, completions);
+        if (proposal) storage.addAdaptiveProposal(proposal);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      setStatusesState(storage.getTaskStatuses());
+      setAutoSkippedCount((prev) => prev + 1);
+    } else {
+      // Always sync state with storage after hydration in case other instances wrote to it
+      setStatusesState(storage.getTaskStatuses());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   const setTaskStatus = useCallback((taskId: string, status: TaskStatus) => {
     storage.setTaskStatus(taskId, status);
@@ -116,7 +189,7 @@ export function useTaskStatuses() {
     if (proposal) storage.addAdaptiveProposal(proposal);
   }, [setStatusesState]);
 
-  return { statuses: statuses ?? {}, setTaskStatus, skipTask, skipDay, hydrated };
+  return { statuses: statuses ?? {}, setTaskStatus, skipTask, skipDay, hydrated, autoSkippedCount };
 }
 
 export function useSimResults() {
@@ -159,6 +232,13 @@ export function useAdaptiveHistory() {
       accepted: true,
       decidedAt: new Date().toISOString(),
     });
+    // Create real adaptive tasks for actionable changes
+    const proposal = storage.getAdaptiveHistory().find((p) => p.id === id);
+    if (proposal) {
+      const existing = storage.getAdaptiveTasks();
+      const newTasks = buildAdaptiveTasks(proposal, existing);
+      for (const t of newTasks) storage.addAdaptiveTask(t);
+    }
     setHistoryState(storage.getAdaptiveHistory());
   }, [setHistoryState]);
 
@@ -171,6 +251,25 @@ export function useAdaptiveHistory() {
   }, [setHistoryState]);
 
   return { history: history ?? [], refresh, acceptProposal, rejectProposal, hydrated };
+}
+
+export function useAdaptiveTasks() {
+  const { data: tasks, setData: setTasksState, hydrated } = useLocalStorage<AdaptiveTask[]>(
+    "adaptiveTasks",
+    () => storage.getAdaptiveTasks()
+  );
+
+  const completeTask = useCallback((id: string) => {
+    storage.updateAdaptiveTask(id, { completed: true, completedAt: new Date().toISOString() });
+    setTasksState(storage.getAdaptiveTasks());
+  }, [setTasksState]);
+
+  const uncompleteTask = useCallback((id: string) => {
+    storage.updateAdaptiveTask(id, { completed: false, completedAt: undefined });
+    setTasksState(storage.getAdaptiveTasks());
+  }, [setTasksState]);
+
+  return { tasks: tasks ?? [], completeTask, uncompleteTask, hydrated };
 }
 
 export function useMasteries() {

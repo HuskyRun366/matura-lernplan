@@ -4,6 +4,7 @@ import {
   TaskStatus,
   SimulationResult,
   AdaptiveProposal,
+  AdaptiveTask,
   STORAGE_KEYS,
 } from "./types";
 
@@ -89,6 +90,24 @@ export function updateAdaptiveProposal(
   if (idx >= 0) {
     all[idx] = { ...all[idx], ...update };
     set(STORAGE_KEYS.adaptiveHistory, all);
+  }
+}
+
+// ── Adaptive Tasks ──
+export function getAdaptiveTasks(): AdaptiveTask[] {
+  return get<AdaptiveTask[]>(STORAGE_KEYS.adaptiveTasks) || [];
+}
+export function addAdaptiveTask(task: AdaptiveTask): void {
+  const all = getAdaptiveTasks();
+  all.push(task);
+  set(STORAGE_KEYS.adaptiveTasks, all);
+}
+export function updateAdaptiveTask(id: string, update: Partial<AdaptiveTask>): void {
+  const all = getAdaptiveTasks();
+  const idx = all.findIndex((t) => t.id === id);
+  if (idx >= 0) {
+    all[idx] = { ...all[idx], ...update };
+    set(STORAGE_KEYS.adaptiveTasks, all);
   }
 }
 

@@ -122,6 +122,10 @@ export interface TaskStatus {
   completed: boolean;
   completedAt?: string;
   skipped: boolean;
+  // Set by auto-detection when a whole past day had no activity.
+  // Unlike skipped, carriedOver tasks remain interactive and appear
+  // in the next open day's "Nachzuholen" section.
+  carriedOver?: boolean;
 }
 
 // ── Simulations ──
@@ -152,6 +156,14 @@ export interface TopicMastery {
   lastUpdated: string;
   trend: Trend;
   trendDelta: number;
+  // SM-2
+  sm2EasinessFactor: number;   // EF: 1.3–∞, typical 1.3–2.5
+  sm2Interval: number;         // next review interval in days
+  sm2NextReview: string;       // ISO date of recommended next review
+  // IRT
+  irtAbilityTheta: number;     // learner ability estimate (logit scale)
+  // Interleaving
+  interleavingBonus: number;   // 0–0.05 bonus applied to currentScore
 }
 
 // ── Adaptive ──
@@ -165,6 +177,14 @@ export type AdaptiveChangeType =
   | "intensify_week"
   | "activate_notfall";
 
+export type AdaptiveTrigger =
+  | "exercise_completion"
+  | "simulation_result"
+  | "weekly_review"
+  | "phase_transition"
+  | "day_skipped"
+  | "sm2_review";
+
 export interface AdaptiveChange {
   type: AdaptiveChangeType;
   targetDate?: string;
@@ -176,11 +196,28 @@ export interface AdaptiveChange {
 export interface AdaptiveProposal {
   id: string;
   timestamp: string;
-  trigger: "exercise_completion" | "simulation_result" | "weekly_review" | "phase_transition" | "day_skipped";
+  trigger: AdaptiveTrigger;
   triggerDetails: string;
   changes: AdaptiveChange[];
   accepted?: boolean;
   decidedAt?: string;
+}
+
+// ── Adaptive Tasks (created when proposals are accepted) ──
+export interface AdaptiveTask {
+  id: string;
+  date: string;          // ISO date this task is scheduled for
+  topicId: string;
+  topicName: string;
+  subject: Subject;
+  title: string;
+  description: string;
+  durationMinutes: number;
+  type: "wiederholung" | "lueckenschluss";
+  proposalId: string;    // which proposal created this
+  createdAt: string;
+  completed: boolean;
+  completedAt?: string;
 }
 
 // ── Weeks ──
@@ -200,5 +237,5 @@ export const STORAGE_KEYS = {
   taskStatus: "mlp:task-status",
   simResults: "mlp:sim-results",
   adaptiveHistory: "mlp:adaptive-history",
-  adaptiveModifications: "mlp:adaptive-mods",
+  adaptiveTasks: "mlp:adaptive-tasks",
 } as const;

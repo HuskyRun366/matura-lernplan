@@ -75,9 +75,9 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "Teil A Diagnose",
       desc: "Komplette Teil-A-Probematura (aufgabenpool.at). Stoppuhr. Jede Aufgabe bewerten: sicher/unsicher/geraten. Fehlerprotokoll anlegen.",
       time: "2,5h", topicIds: ["A1", "A2", "A3", "A4", "A5", "A6", "A7"], taskType: "diagnose",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool.at" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool.at" }],
       exercises: [
-        { label: "Teil A Probematura komplett", topicId: "A1", maxPoints: 24 },
+        { label: "Teil A Probematura komplett", topicId: "A1", maxPoints: 24, url: "https://www.matura.gv.at/downloads" },
       ],
     },
     {
@@ -97,7 +97,7 @@ export const PLAN_DATA: PlanDay[] = [
       desc: "Sinussatz + Cosinussatz: Formeln verstehen, 5 Aufgaben rechnen.",
       time: "1,5h", topicIds: ["B1"], taskType: "neustoff",
       resources: [
-        { type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Trigonometrie" },
+        { type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Trigonometrie" },
         { type: "mathago", url: "https://mathago.at", label: "Mathago: Sinussatz/Cosinussatz" },
       ],
       exercises: [
@@ -138,6 +138,17 @@ export const PLAN_DATA: PlanDay[] = [
         { label: "3 Wahrheitstafeln erstellen", topicId: "LOGIK", maxPoints: 6 },
       ],
     },
+    {
+      subject: "prog", title: "WPF: DataTemplates für Message-Typen",
+      desc: "Osterferien-Tag → mehr Prog-Zeit nutzen! DataTemplate für verschiedene Message-Typen (TextMessage, SystemMessage, UserMessage) in der NetBoard-ListBox. DataTemplateSelector implementieren damit verschiedene Nachrichten optisch unterschiedlich dargestellt werden.",
+      time: "1,5h", topicIds: ["WPF_MVVM", "OOP"], taskType: "praxis",
+      resources: [{ type: "book", label: "Kap. 22-24", chapters: "22-24" }],
+      exercises: [
+        { label: "DataTemplate für 3 Message-Typen definieren", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "DataTemplateSelector implementieren", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "In NetBoard-ListBox einbauen + testen", topicId: "WPF_MVVM", maxPoints: 5 },
+      ],
+    },
   ]),
   day("2026-04-01", "Mi", "stark", 1, "Aufbau", [
     {
@@ -145,7 +156,7 @@ export const PLAN_DATA: PlanDay[] = [
       desc: "Kartesische Form, Gaußsche Ebene, Addition/Subtraktion. 5 Aufgaben.",
       time: "1,5h", topicIds: ["B2"], taskType: "neustoff",
       resources: [
-        { type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Komplexe Zahlen" },
+        { type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Komplexe Zahlen" },
         { type: "mathago", url: "https://mathago.at", label: "Mathago: Komplexe Zahlen" },
       ],
       exercises: [
@@ -186,13 +197,23 @@ export const PLAN_DATA: PlanDay[] = [
         { label: "KNF/DNF Umformungen", topicId: "LOGIK", maxPoints: 6 },
       ],
     },
+    {
+      subject: "prog", title: "WPF: Styles, Triggers & ControlTemplates",
+      desc: "Osterferien → Prog-Zeit nutzen! NetBoard optisch aufwerten: Style mit Triggers für Button-Hover/Disabled-Zustand. ControlTemplate für benutzerdefinierte Button-Optik. Implizite Styles im App.xaml definieren.",
+      time: "1h", topicIds: ["WPF_MVVM"], taskType: "praxis",
+      resources: [{ type: "book", label: "Kap. 28", chapters: "28" }],
+      exercises: [
+        { label: "Style + Trigger für Button-States", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "Implizite Styles in App.xaml", topicId: "WPF_MVVM", maxPoints: 5 },
+      ],
+    },
   ]),
   day("2026-04-03", "Fr", "stark", 1, "Aufbau", [
     {
       subject: "math", title: "B2 Komplexe Zahlen II",
       desc: "Polarform, Multiplikation/Division, Umrechnung zwischen Formen. 5 Aufgaben.",
       time: "1,5h", topicIds: ["B2"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Komplexe Zahlen" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Komplexe Zahlen" }],
       exercises: [
         { label: "Polarform berechnen", topicId: "B2", maxPoints: 4 },
         { label: "Multiplikation in Polarform", topicId: "B2", maxPoints: 4 },
@@ -217,7 +238,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "B3 Vektoren I + Mini-Test",
       desc: "Vektoren R²/R³, Grundoperationen (1,5h). Dann: 5 gemischte Aufgaben A+B als Selbsttest (1h).",
       time: "2,5h", topicIds: ["B3", "A1", "A2", "A3"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Vektoren" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Vektoren" }],
       exercises: [
         { label: "Vektor-Addition/Subtraktion", topicId: "B3", maxPoints: 4 },
         { label: "Skalare Multiplikation", topicId: "B3", maxPoints: 4 },
@@ -246,7 +267,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "B3 Vektoren II",
       desc: "Skalarprodukt, Kreuzprodukt, Anwendungen. 6 Aufgaben.",
       time: "2,5h", topicIds: ["B3"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Vektoren" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Vektoren" }],
       exercises: [
         { label: "Skalarprodukt berechnen", topicId: "B3", maxPoints: 4 },
         { label: "Winkel zwischen Vektoren", topicId: "B3", maxPoints: 4 },
@@ -273,7 +294,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "B4 Matrizen",
       desc: "Matrizenrechnung, LGS mit Matrizen lösen. 5 Aufgaben.",
       time: "1,5h", topicIds: ["B4"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Matrizen" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Matrizen" }],
       exercises: [
         { label: "Matrix-Addition/Multiplikation", topicId: "B4", maxPoints: 4 },
         { label: "Determinante berechnen", topicId: "B4", maxPoints: 4 },
@@ -313,13 +334,23 @@ export const PLAN_DATA: PlanDay[] = [
         { label: "Quantoren-Aufgaben", topicId: "LOGIK", maxPoints: 6 },
       ],
     },
+    {
+      subject: "prog", title: "Netzwerk: Chat-Protokoll & Serialisierung",
+      desc: "Osterferien → Prog-Zeit nutzen! Eigenes Chat-Protokoll entwerfen: MessageType-Enum (Text, Join, Leave, Error). Nachrichten als strukturierten String serialisieren/deserialisieren (z.B. TYPE|USER|CONTENT). In NetBoard-Server + Client einbauen, verschiedene Nachrichtentypen verarbeiten.",
+      time: "1,5h", topicIds: ["NETZWERK", "OOP"], taskType: "praxis",
+      exercises: [
+        { label: "MessageType-Enum + Protokoll-Format", topicId: "NETZWERK", maxPoints: 5 },
+        { label: "Serialisierung/Deserialisierung implementieren", topicId: "NETZWERK", maxPoints: 5 },
+        { label: "Server: verschiedene Message-Typen behandeln", topicId: "NETZWERK", maxPoints: 5 },
+      ],
+    },
   ]),
   day("2026-04-08", "Mi", "stark", 2, "Aufbau", [
     {
       subject: "math", title: "B5 Differentialrechnung I",
       desc: "Ableitungsregeln + Kettenregel + Quotientenregel. 6 Aufgaben.",
       time: "1,5h", topicIds: ["B5"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Differentialrechnung" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Differentialrechnung" }],
       exercises: [
         { label: "Potenzregel", topicId: "B5", maxPoints: 4 },
         { label: "Kettenregel", topicId: "B5", maxPoints: 4 },
@@ -361,13 +392,23 @@ export const PLAN_DATA: PlanDay[] = [
         { label: "Grad-Berechnung", topicId: "GRAPHENTHEORIE", maxPoints: 4 },
       ],
     },
+    {
+      subject: "prog", title: "Multithreading: CancellationToken + ThreadPool",
+      desc: "Osterferien → Prog-Zeit nutzen! Sauberes Thread-Stoppen mit CancellationTokenSource/CancellationToken im NetBoard-Server. ThreadPool.QueueUserWorkItem vs Task.Run vergleichen. Volatile-Keyword und Interlocked für thread-sichere Zugriffe.",
+      time: "1h", topicIds: ["MULTITHREADING"], taskType: "praxis",
+      resources: [{ type: "book", label: "Kap. 15", chapters: "15" }],
+      exercises: [
+        { label: "CancellationToken im Server einbauen", topicId: "MULTITHREADING", maxPoints: 5 },
+        { label: "Interlocked für thread-sichere Counter", topicId: "MULTITHREADING", maxPoints: 5 },
+      ],
+    },
   ]),
   day("2026-04-10", "Fr", "stark", 2, "Aufbau", [
     {
       subject: "math", title: "B5 Differentialrechnung II",
       desc: "Ableitung Trig-/Log-/Exp-Funktionen. Optimierungsaufgaben. 5 Aufgaben.",
       time: "1,5h", topicIds: ["B5"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Analysis" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Analysis" }],
       exercises: [
         { label: "Trig-Funktionen ableiten", topicId: "B5", maxPoints: 4 },
         { label: "Log/Exp ableiten", topicId: "B5", maxPoints: 4 },
@@ -392,7 +433,7 @@ export const PLAN_DATA: PlanDay[] = [
       desc: "Komplette Matura-Simulation (Teil A + soweit möglich Teil B). 2,5h rechnen + 0,5h Nachanalyse.",
       time: "3h", topicIds: ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "B1", "B2", "B3", "B4", "B5"], taskType: "simulation",
       exercises: [
-        { label: "Simulation 1 komplett", topicId: "A1", maxPoints: 48 },
+        { label: "Simulation 1 komplett", topicId: "A1", maxPoints: 48, url: "https://www.matura.gv.at/downloads" },
       ],
     },
     {
@@ -413,7 +454,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "Nachanalyse Sim 1 + B6 Integralrechnung I",
       desc: "Nachanalyse (0,5h). Stammfunktionen, lineare Substitution, bestimmtes Integral. 6 Aufgaben.",
       time: "2,5h", topicIds: ["B6"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Integralrechnung" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Integralrechnung" }],
       exercises: [
         { label: "Stammfunktionen finden", topicId: "B6", maxPoints: 4 },
         { label: "Lineare Substitution", topicId: "B6", maxPoints: 4 },
@@ -480,13 +521,23 @@ export const PLAN_DATA: PlanDay[] = [
         { label: "Euler-/Hamilton-Kreise", topicId: "GRAPHENTHEORIE", maxPoints: 4 },
       ],
     },
+    {
+      subject: "prog", title: "2D-Grafik: Transformationen + Hit-Testing",
+      desc: "Osterferien → Prog-Zeit nutzen! Canvas-Elemente transformieren (ScaleTransform, RotateTransform). Hit-Testing: Mouse-Klick auf welches Shape? Gezeichnete Elemente selektierbar machen (Outline-Highlight). In NetBoard-Canvas einbauen.",
+      time: "1h", topicIds: ["GRAFIK_2D"], taskType: "praxis",
+      resources: [{ type: "book", label: "Kap. 30", chapters: "30" }],
+      exercises: [
+        { label: "Transformationen (Scale, Rotate) auf Shapes", topicId: "GRAFIK_2D", maxPoints: 5 },
+        { label: "Hit-Testing + Selektion mit Highlight", topicId: "GRAFIK_2D", maxPoints: 5 },
+      ],
+    },
   ]),
   day("2026-04-15", "Mi", "stark", 3, "Aufbau", [
     {
       subject: "math", title: "B8 Stochastik I",
       desc: "Normalverteilung: Eigenschaften, Berechnung, z-Werte. 5 Aufgaben.",
       time: "1,5h", topicIds: ["B8"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Stochastik" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Stochastik" }],
       exercises: [
         { label: "Normalverteilung: Eigenschaften", topicId: "B8", maxPoints: 4 },
         { label: "z-Werte berechnen", topicId: "B8", maxPoints: 4 },
@@ -527,13 +578,25 @@ export const PLAN_DATA: PlanDay[] = [
         { label: "Übergangstabelle", topicId: "AUTOMATEN", maxPoints: 4 },
       ],
     },
+    {
+      subject: "prog", title: "LINQ + XML kombiniert",
+      desc: "Osterferien → Prog-Zeit nutzen! DataLab-Daten: LINQ-Abfragen direkt auf XDocument/XElement anwenden (LINQ to XML). Daten filtern, transformieren, in neue XML-Struktur schreiben. Verbindung DataLab LINQ (Kap. 11) ↔ XML (Kap. 14) festigen.",
+      time: "1h", topicIds: ["LINQ", "XML"], taskType: "praxis",
+      resources: [
+        { type: "book", label: "Kap. 11 + 14", chapters: "11-14" },
+      ],
+      exercises: [
+        { label: "LINQ to XML: Filtern + Transformieren", topicId: "LINQ", maxPoints: 5 },
+        { label: "Ergebnis in neue XML-Datei schreiben", topicId: "XML", maxPoints: 5 },
+      ],
+    },
   ]),
   day("2026-04-17", "Fr", "stark", 3, "Aufbau", [
     {
       subject: "math", title: "B8 Stochastik II",
       desc: "Konfidenzintervalle, Stichprobenmittel. 5 Aufgaben.",
       time: "1,5h", topicIds: ["B8"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Konfidenzintervalle" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Konfidenzintervalle" }],
       exercises: [
         { label: "Konfidenzintervall berechnen", topicId: "B8", maxPoints: 4 },
         { label: "Stichprobenumfang", topicId: "B8", maxPoints: 4 },
@@ -559,13 +622,18 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "sim", title: "SIMULATION 2 — Mathe",
       desc: "Komplette Matura (A+B). 2,5h + 0,5h Nachanalyse.",
       time: "3h", topicIds: ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "B1", "B2", "B3", "B4", "B5", "B6", "B8"], taskType: "simulation",
-      exercises: [{ label: "Simulation 2 komplett", topicId: "A1", maxPoints: 48 }],
+      exercises: [{ label: "Simulation 2 komplett", topicId: "A1", maxPoints: 48, url: "https://www.matura.gv.at/downloads" }],
     },
     {
-      subject: "sim", title: "Mini-Prüfung — Programmieren",
-      desc: "2,5h: 'Baue Chat-Client mit WPF, TCP-Verbindung, Nachrichten senden/empfangen, Verlauf in XML speichern.' Ohne Hilfe.",
-      time: "2,5h", topicIds: ["WPF_MVVM", "NETZWERK", "XML"], taskType: "simulation",
-      exercises: [{ label: "Mini-Prüfung: Chat-Client", topicId: "WPF_MVVM", maxPoints: 20 }],
+      subject: "sim", title: "Prüfungs-Simulation: Fotoalbum-Verwaltung",
+      desc: "WPF-Programm: Menü Datei (Neues Album, Bilder hinzufügen, verschieben, löschen) + Bearbeiten (90°/180° rotieren) — je mit Mnemonic, Shortcut, Icon. Alben = Unterordner im Images-Ordner. ComboBox für Album-Auswahl, ListBox als Bildergalerie (DataTemplate: Vorschau + Name ohne Endung), Mehrfachauswahl. ZIP-Import (Bilder in aktuelles Album entpacken). Alle Daten beim Beenden in XML speichern, beim Start laden. JPG+PNG. Ohne Hilfe.",
+      time: "2,5h", topicIds: ["WPF_MVVM", "XML", "LINQ", "CUSTOM_CONTROLS"], taskType: "simulation",
+      exercises: [
+        { label: "Menüstruktur mit Mnemonics, Shortcuts, Icons", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "ComboBox + ListBox mit DataTemplate (Bildergalerie)", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "ZIP-Import + Dateioperationen (JPG/PNG)", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "XML-Persistenz beim Start/Beenden", topicId: "XML", maxPoints: 5 },
+      ],
     },
   ]),
 
@@ -577,7 +645,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "Nachanalyse Sim 2 + B7 DGL",
       desc: "Nachanalyse (0,5h). Trennung der Variablen, DGL 1. Ordnung. 5 Aufgaben.",
       time: "2,5h", topicIds: ["B7"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: DGL" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: DGL" }],
       exercises: [
         { label: "Trennung der Variablen 1", topicId: "B7", maxPoints: 4 },
         { label: "Trennung der Variablen 2", topicId: "B7", maxPoints: 4 },
@@ -603,7 +671,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "B9 Regression",
       desc: "Lineare Regression, Korrelationskoeffizient, Interpretation. 5 Aufgaben.",
       time: "1,5h", topicIds: ["B9"], taskType: "neustoff",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Regression" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Regression" }],
       exercises: [
         { label: "Regressionsgerade berechnen", topicId: "B9", maxPoints: 4 },
         { label: "Korrelationskoeffizient", topicId: "B9", maxPoints: 4 },
@@ -655,14 +723,14 @@ export const PLAN_DATA: PlanDay[] = [
       ],
     },
     {
-      subject: "prog", title: "Restthemen + Lücken",
-      desc: "Collections (Dictionary, Queue, Stack). Generics. Fehlerbehandlung (try/catch, eigene Exceptions).",
-      time: "2h", topicIds: ["OOP"], taskType: "neustoff",
-      resources: [{ type: "book", label: "Kap. 6-9", chapters: "6-9" }],
+      subject: "prog", title: "Praxis: Taschenrechner mit BNF-Parser",
+      desc: "WPF-Taschenrechner mit eigenem Parser: BNF-Grammatik für arithmetische Ausdrücke definieren (+,-,*,/,^, Klammern). Tokenizer + rekursiver Abstiegsparser implementieren. Variablen speichern (Dictionary). Berechnungshistorie als XML laden/speichern. MVVM-Architektur, eigene Exceptions für Parser-Fehler.",
+      time: "2h", topicIds: ["GRAMMATIK", "WPF_MVVM", "XML", "OOP"], taskType: "praxis",
       exercises: [
-        { label: "Dictionary/Queue/Stack nutzen", topicId: "OOP", maxPoints: 5 },
-        { label: "Generics implementieren", topicId: "OOP", maxPoints: 5 },
-        { label: "Custom Exceptions", topicId: "OOP", maxPoints: 5 },
+        { label: "BNF-Grammatik + Tokenizer", topicId: "GRAMMATIK", maxPoints: 5 },
+        { label: "Rekursiver Abstiegsparser", topicId: "GRAMMATIK", maxPoints: 5 },
+        { label: "WPF UI + MVVM + Variablen (Dictionary)", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "XML-Persistenz für Berechnungshistorie", topicId: "XML", maxPoints: 5 },
       ],
     },
   ]),
@@ -690,19 +758,20 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "Lückenschluss + Ankreuzfragen",
       desc: "10 Ankreuzfragen aus dem Aufgabenpool. Eliminationsstrategie trainieren.",
       time: "1,5h", topicIds: ["A1", "A2", "A3", "A4", "A5", "A6", "A7"], taskType: "lueckenschluss",
-      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at", label: "Aufgabenpool: Ankreuzfragen" }],
+      resources: [{ type: "aufgabenpool", url: "https://aufgabenpool.at/amn/index.php?id=M", label: "Aufgabenpool: Ankreuzfragen" }],
       exercises: [
         { label: "10 Ankreuzfragen", topicId: "A1", maxPoints: 10 },
       ],
     },
     {
-      subject: "prog", title: "Gemischte Praxis",
-      desc: "3 Aufgaben (je 40 Min.): 1) Thread-Synchronisation, 2) LINQ-Abfrage, 3) WPF-Databinding. Ohne Hilfe.",
-      time: "2h", topicIds: ["MULTITHREADING", "LINQ", "WPF_MVVM"], taskType: "praxis",
+      subject: "prog", title: "Praxis: Osterhase Aufg. 1+2",
+      desc: "Aufg. 1: WPF Programm — Personen mit Name, Longitude, Latitude in SQLite-DB (ORM + LINQ). Eingabefelder, keine Löschfunktion nötig. Aufg. 2: Alle Personen auf Wiener-Neustadt-Karte (Canvas) als geometrische Formen visualisieren. Koordinaten auf Canvas-Pixel umrechnen (Links 16.209652, Unten 47.786898, Rechts 16.281017, Oben 47.846533).",
+      time: "2h", topicIds: ["WPF_MVVM", "LINQ", "GRAFIK_2D"], taskType: "praxis",
       exercises: [
-        { label: "Thread-Synchronisation", topicId: "MULTITHREADING", maxPoints: 5 },
-        { label: "LINQ-Abfrage", topicId: "LINQ", maxPoints: 5 },
-        { label: "WPF-Databinding", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "SQLite ORM + Personenmodell + LINQ", topicId: "LINQ", maxPoints: 5 },
+        { label: "Eingabeformular WPF (Bindings)", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "Karten-Canvas mit Koordinaten-Umrechnung", topicId: "GRAFIK_2D", maxPoints: 5 },
+        { label: "Personen als geometrische Formen auf Karte", topicId: "GRAFIK_2D", maxPoints: 5 },
       ],
     },
   ]),
@@ -711,13 +780,18 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "sim", title: "SIMULATION 3 — Mathe (Echtbedingungen)",
       desc: "Komplette Matura unter Echtbedingungen (270 Min. simulieren). Nachanalyse.",
       time: "3h", topicIds: ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9"], taskType: "simulation",
-      exercises: [{ label: "Simulation 3 komplett", topicId: "A1", maxPoints: 48 }],
+      exercises: [{ label: "Simulation 3 komplett", topicId: "A1", maxPoints: 48, url: "https://www.matura.gv.at/downloads" }],
     },
     {
-      subject: "sim", title: "Prog-Simulation",
-      desc: "Vollständige Prüfungssimulation (2,5h): Aufgabe mit WPF + Netzwerk + Threading. Nachanalyse.",
-      time: "2,5h", topicIds: ["WPF_MVVM", "NETZWERK", "MULTITHREADING"], taskType: "simulation",
-      exercises: [{ label: "Prog-Simulation komplett", topicId: "WPF_MVVM", maxPoints: 20 }],
+      subject: "sim", title: "Prüfungs-Simulation: Gomoku (Fünf-Gewinnt)",
+      desc: "WPF Gomoku: Startauswahl (Netzwerk Server/Client, Mensch gegen Mensch, gegen Computer) + Feldgröße wählen (Server/Offline). Spielfeld-Modell mit Bindings + DataTemplates, UniformGrid (Größe automatisch). MVC-Pattern: austauschbare Controller-Klasse für Spielmodi. Computer-KI (Gewinnzug-Erkennung). Netzwerk-Modus via TCP. Ohne Hilfe.",
+      time: "2,5h", topicIds: ["WPF_MVVM", "NETZWERK", "MULTITHREADING", "ALGORITHMEN"], taskType: "simulation",
+      exercises: [
+        { label: "Spielbrett-Modell + DataTemplate + UniformGrid", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "MVC: Controller für Mensch/Computer/Netzwerk-Modus", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "TCP Server/Client Netzwerk-Spielmodus", topicId: "NETZWERK", maxPoints: 5 },
+        { label: "Computer-KI: Gewinnzug-Erkennung", topicId: "ALGORITHMEN", maxPoints: 5 },
+      ],
     },
   ]),
 
@@ -749,13 +823,14 @@ export const PLAN_DATA: PlanDay[] = [
       exercises: [{ label: "5 gezielte Aufgaben", topicId: "B5", maxPoints: 20 }],
     },
     {
-      subject: "prog", title: "Gezieltes Üben",
-      desc: "3 Aufgaben à 50 Min. zu den 3 schwächsten Themen.",
-      time: "2,5h", topicIds: ["NETZWERK", "MULTITHREADING", "WPF_MVVM"], taskType: "praxis",
+      subject: "prog", title: "Praxis: Osterhase Aufg. 3+4",
+      desc: "Aufg. 3: Clustering-Algorithmus (K-Means): Personen gleichmäßig auf N Helfer aufteilen (N frei wählbar). Jede Gruppe in eigener Farbe auf Karte anzeigen. Aufg. 4: TSP/Nearest-Neighbor je Helfer: Startpunkt per Mausklick auf Karte setzen, kürzesten Weg durch alle Punkte berechnen, Route als farbige Linie auf Canvas zeichnen.",
+      time: "2,5h", topicIds: ["ALGORITHMEN", "GRAFIK_2D", "GRAPHENTHEORIE"], taskType: "praxis",
       exercises: [
-        { label: "Schwäche 1: 50-Min-Aufgabe", topicId: "NETZWERK", maxPoints: 5 },
-        { label: "Schwäche 2: 50-Min-Aufgabe", topicId: "MULTITHREADING", maxPoints: 5 },
-        { label: "Schwäche 3: 50-Min-Aufgabe", topicId: "WPF_MVVM", maxPoints: 5 },
+        { label: "K-Means Clustering-Algorithmus", topicId: "ALGORITHMEN", maxPoints: 5 },
+        { label: "Gruppen in verschiedenen Farben auf Karte", topicId: "GRAFIK_2D", maxPoints: 5 },
+        { label: "Nearest-Neighbor TSP-Algorithmus", topicId: "GRAPHENTHEORIE", maxPoints: 5 },
+        { label: "Route als Linie auf Canvas zeichnen", topicId: "GRAFIK_2D", maxPoints: 5 },
       ],
     },
   ]),
@@ -781,11 +856,14 @@ export const PLAN_DATA: PlanDay[] = [
       exercises: [{ label: "5 gezielte Aufgaben", topicId: "B6", maxPoints: 20 }],
     },
     {
-      subject: "prog", title: "Wdh. Netzwerk + Threading",
-      desc: "Von Null: TCP-Server mit 3 Clients, Thread-basiert. 90 Min. Zeitlimit.",
-      time: "2,5h", topicIds: ["NETZWERK", "MULTITHREADING"], taskType: "praxis",
+      subject: "prog", title: "Praxis: ISP Router — Vorbereitung",
+      desc: "ISP-Router WPF Vorbereitung: SQLite-DB mit ORM einbinden (Router, Verbindungen als Klassen). Custom Control Graph aus DLL-Datei laden und einbinden. Knoten + Kanten aus DB im Graph-Control anzeigen. Left-Click = Startknoten setzen, Right-Click = Endknoten setzen (Ereignisse vom Custom Control verarbeiten).",
+      time: "2,5h", topicIds: ["CUSTOM_CONTROLS", "GRAPHENTHEORIE", "LINQ"], taskType: "praxis",
       exercises: [
-        { label: "TCP-Server von Null (90 Min.)", topicId: "NETZWERK", maxPoints: 10 },
+        { label: "SQLite ORM: Router + Verbindungen als Klassen", topicId: "LINQ", maxPoints: 5 },
+        { label: "Custom Control Graph aus DLL laden", topicId: "CUSTOM_CONTROLS", maxPoints: 5 },
+        { label: "Knoten/Kanten aus DB im Graph-Control anzeigen", topicId: "CUSTOM_CONTROLS", maxPoints: 5 },
+        { label: "Start/End-Knoten per Mausklick (Left/Right)", topicId: "GRAPHENTHEORIE", maxPoints: 5 },
       ],
     },
   ]),
@@ -811,10 +889,15 @@ export const PLAN_DATA: PlanDay[] = [
       exercises: [{ label: "6 gemischte Aufgaben", topicId: "B5", maxPoints: 24 }],
     },
     {
-      subject: "sim", title: "GENERALPROBE — Programmieren",
-      desc: "Letzte Komplett-Simulation unter Prüfungsbedingungen. Aufgabenstellung vorher nicht ansehen.",
-      time: "2,5h", topicIds: ["WPF_MVVM", "NETZWERK", "MULTITHREADING", "LINQ", "XML"], taskType: "simulation",
-      exercises: [{ label: "Generalprobe Programmieren", topicId: "WPF_MVVM", maxPoints: 20 }],
+      subject: "sim", title: "GENERALPROBE: ISP Router Optimierung",
+      desc: "Vollständige Prüfungssimulation (2,5h): ISP-Router WPF-Programm. SQLite-DB mit ORM (Router, Verbindungen). Custom Control Graph aus DLL einbinden. Dijkstra-Algorithmus für kürzeste Route implementieren. Jede Route in zufälliger Farbe anzeigen (mehrere Routen gleichzeitig möglich). Nach jeder Route Start/End-Knoten auf null zurücksetzen. Ohne Hilfe.",
+      time: "2,5h", topicIds: ["WPF_MVVM", "CUSTOM_CONTROLS", "GRAPHENTHEORIE", "ALGORITHMEN", "LINQ"], taskType: "simulation",
+      exercises: [
+        { label: "SQLite ORM + Klassen für Router-DB", topicId: "LINQ", maxPoints: 5 },
+        { label: "Graph Custom Control (DLL) vollständig einbinden", topicId: "CUSTOM_CONTROLS", maxPoints: 5 },
+        { label: "Dijkstra-Algorithmus implementieren", topicId: "GRAPHENTHEORIE", maxPoints: 5 },
+        { label: "Routen in zufälliger Farbe, mehrere gleichzeitig", topicId: "ALGORITHMEN", maxPoints: 5 },
+      ],
     },
   ]),
   day("2026-05-02", "Sa", "stark", 5, "Puffer", [
@@ -822,7 +905,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "math", title: "Kurz-Simulation",
       desc: "10 ausgewählte Aufgaben (A+B gemischt) unter Zeitdruck.",
       time: "1,5h", topicIds: ["A1", "B1", "B2", "B3", "B5", "B6", "B8"], taskType: "simulation",
-      exercises: [{ label: "10 Aufgaben unter Zeitdruck", topicId: "A1", maxPoints: 40 }],
+      exercises: [{ label: "10 Aufgaben unter Zeitdruck", topicId: "A1", maxPoints: 40, url: "https://www.matura.gv.at/downloads" }],
     },
     {
       subject: "prog", title: "Nachanalyse + Cheat-Sheet final",
@@ -872,7 +955,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "sim", title: "SIMULATION 4 — Mathe",
       desc: "Komplette Matura unter Echtbedingungen. Sofortige Nachanalyse.",
       time: "3,5h", topicIds: ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9"], taskType: "simulation",
-      exercises: [{ label: "Simulation 4 komplett", topicId: "A1", maxPoints: 48 }],
+      exercises: [{ label: "Simulation 4 komplett", topicId: "A1", maxPoints: 48, url: "https://www.matura.gv.at/downloads" }],
     },
   ]),
   day("2026-05-07", "Do", "leicht", 6, "Endphase", [
@@ -899,7 +982,7 @@ export const PLAN_DATA: PlanDay[] = [
       subject: "sim", title: "SIMULATION 5 — Generalprobe Mathe",
       desc: "Letzte Komplett-Simulation (3,5h) + ausführliche Nachanalyse (2h).",
       time: "5,5h", topicIds: ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9"], taskType: "simulation",
-      exercises: [{ label: "Simulation 5 (Generalprobe)", topicId: "A1", maxPoints: 48 }],
+      exercises: [{ label: "Simulation 5 (Generalprobe)", topicId: "A1", maxPoints: 48, url: "https://www.matura.gv.at/downloads" }],
     },
   ]),
   day("2026-05-10", "So", "stark", 6, "Endphase", [

@@ -1,23 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import {
   Calculator,
   Code,
-  Target,
   Calendar,
   TrendingUp,
   CheckCircle2,
   AlertTriangle,
   ChevronRight,
+  RotateCcw,
+  Sparkles,
 } from "lucide-react";
 import { PLAN_DATA, WEEKS, PROG_EXAM_DATE, MATH_EXAM_DATE } from "@/lib/plan-data";
-import { useUser, useTaskStatuses, useAdaptiveHistory, useMasteries } from "@/hooks/use-storage";
+import { useUser, useTaskStatuses, useAdaptiveHistory, useMasteries, useCompletions, useAdaptiveTasks } from "@/hooks/use-storage";
 
 function daysUntil(dateStr: string): number {
   const target = new Date(dateStr);
@@ -39,11 +42,30 @@ const SUBJECT_STYLES = {
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const { statuses, setTaskStatus } = useTaskStatuses();
-  const { history, acceptProposal, rejectProposal } = useAdaptiveHistory();
+  const { statuses, setTaskStatus, autoSkippedCount } = useTaskStatuses();
+  const { completions, hydrated: completionsHydrated } = useCompletions();
+  const { history, refresh: refreshHistory, acceptProposal, rejectProposal } = useAdaptiveHistory();
+  const { tasks: adaptiveTasks, completeTask: completeAdaptiveTask, uncompleteTask: uncompleteAdaptiveTask } = useAdaptiveTasks();
+
+  // Refresh proposals after auto-skip or after SM-2 hydration check resolves
+  useEffect(() => {
+    if (autoSkippedCount > 0 || completionsHydrated) refreshHistory();
+  }, [autoSkippedCount, completionsHydrated, refreshHistory]);
 
   const today = todayStr();
   const todayPlan = PLAN_DATA.find((d) => d.date === today);
+
+  // Adaptive tasks scheduled for today
+  const todayAdaptiveTasks = adaptiveTasks.filter((t) => t.date === today && !t.completed);
+
+  // Carried-over tasks from all past days (not yet completed)
+  const carriedOverTasks = PLAN_DATA
+    .filter((d) => d.date < today)
+    .flatMap((d) =>
+      d.tasks
+        .filter((t) => statuses[t.id]?.carriedOver && !statuses[t.id]?.completed)
+        .map((t) => ({ ...t, originalDate: d.date, originalDay: d.day }))
+    );
 
   const allTasks = PLAN_DATA.flatMap((d) => d.tasks);
   const mathTasks = allTasks.filter((t) => t.subject === "math" || (t.subject === "sim" && t.title.includes("Mathe")));
@@ -123,6 +145,66 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Carried-over tasks */}
+      {carriedOverTasks.length > 0 && (
+        <Card className="border-yellow-500/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg text-yellow-600 dark:text-yellow-400">
+              <RotateCcw className="h-5 w-5" />
+              Nachzuholen ({carriedOverTasks.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {carriedOverTasks.map((task) => {
+              const SUBJECT_STYLES = {
+                math: { variant: "default" as const, label: "Mathe" },
+                prog: { variant: "secondary" as const, label: "Prog" },
+                sim: { variant: "outline" as const, label: "Simulation" },
+              };
+              const style = SUBJECT_STYLES[task.subject];
+              const isDone = statuses[task.id]?.completed;
+              const monthNames = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+              const d = new Date(task.originalDate + "T00:00:00");
+              const originalLabel = `${task.originalDay} ${d.getDate()}. ${monthNames[d.getMonth()]}`;
+              return (
+                <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
+                  <Checkbox
+                    checked={!!isDone}
+                    onCheckedChange={(checked) =>
+                      setTaskStatus(task.id, {
+                        completed: !!checked,
+                        completedAt: checked ? new Date().toISOString() : undefined,
+                        skipped: false,
+                        carriedOver: !checked,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant={style.variant}>{style.label}</Badge>
+                      <span className={`font-medium text-sm ${isDone ? "line-through opacity-50" : ""}`}>{task.title}</span>
+                      <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-400">{originalLabel}</Badge>
+                      <Badge variant="secondary" className="text-xs">{task.time}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
+                  </div>
+                  <Link href={`/tagesplan/${today}`}>
+                    <Button variant="ghost" size="sm" className="shrink-0">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              );
+            })}
+            <Separator className="my-1" />
+            <p className="text-xs text-muted-foreground">
+              Auf der <Link href={`/tagesplan/${today}`} className="underline">Tagesplan-Seite</Link> findest du alle Details und kannst Aufgaben als erledigt markieren.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Today's Tasks */}
       <Card>
         <CardHeader className="pb-3">
@@ -149,7 +231,7 @@ export default function DashboardPage() {
                   className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
                 >
                   <Checkbox
-                    checked={isDone}
+                    checked={!!isDone}
                     onCheckedChange={(checked) =>
                       setTaskStatus(task.id, {
                         completed: !!checked,
@@ -179,6 +261,32 @@ export default function DashboardPage() {
               <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>Keine Aufgaben für heute</p>
             </div>
+          )}
+          {/* Adaptive tasks for today */}
+          {todayAdaptiveTasks.length > 0 && (
+            <>
+              <Separator className="my-1" />
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="h-3 w-3" /> Adaptiv hinzugefügt
+              </p>
+              {todayAdaptiveTasks.map((t) => (
+                <div key={t.id} className="flex items-start gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+                  <Checkbox
+                    checked={!!t.completed}
+                    onCheckedChange={(checked) => checked ? completeAdaptiveTask(t.id) : uncompleteAdaptiveTask(t.id)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant={t.subject === "math" ? "default" : "secondary"}>{t.subject === "math" ? "Mathe" : "Prog"}</Badge>
+                      <span className="font-medium text-sm">{t.title}</span>
+                      <Badge variant="secondary" className="text-xs">{t.durationMinutes} Min</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
         </CardContent>
       </Card>
@@ -229,19 +337,23 @@ export default function DashboardPage() {
               {PLAN_DATA.filter((d) => d.date >= currentWeek.start && d.date <= currentWeek.end).map((day) => {
                 const allDone = day.tasks.length > 0 && day.tasks.every((t) => statuses[t.id]?.completed);
                 const someDone = day.tasks.some((t) => statuses[t.id]?.completed);
+                const allSkipped = day.tasks.length > 0 && day.tasks.every((t) => statuses[t.id]?.skipped);
+                const hasCarryOver = day.tasks.some((t) => statuses[t.id]?.carriedOver && !statuses[t.id]?.completed);
                 const isToday = day.date === today;
                 return (
                   <Link key={day.date} href={`/tagesplan/${day.date}`}>
                     <div
                       className={`p-2 rounded-lg text-center text-xs border transition-colors hover:bg-accent/50 ${
                         isToday ? "border-primary ring-1 ring-primary" : "border-border"
-                      } ${allDone ? "bg-muted" : someDone ? "bg-accent/50" : ""}`}
+                      } ${allDone ? "bg-muted" : someDone ? "bg-accent/50" : allSkipped ? "bg-destructive/10 border-destructive/30" : hasCarryOver ? "bg-yellow-500/10 border-yellow-500/30" : ""}`}
                     >
-                      <div className="font-medium">{day.day}</div>
+                      <div className={`font-medium ${allSkipped ? "text-destructive" : hasCarryOver ? "text-yellow-600 dark:text-yellow-400" : ""}`}>{day.day}</div>
                       <div className="text-muted-foreground">
                         {day.date.slice(8)}
                       </div>
                       {allDone && <CheckCircle2 className="h-3 w-3 mx-auto mt-1 text-primary" />}
+                      {allSkipped && <AlertTriangle className="h-3 w-3 mx-auto mt-1 text-destructive" />}
+                      {hasCarryOver && !allSkipped && <AlertTriangle className="h-3 w-3 mx-auto mt-1 text-yellow-500" />}
                     </div>
                   </Link>
                 );

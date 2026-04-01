@@ -23,9 +23,10 @@ import {
   Sparkles,
   SkipForward,
   XCircle,
+  RotateCcw,
 } from "lucide-react";
 import { PLAN_DATA, WEEKS } from "@/lib/plan-data";
-import { useTaskStatuses, useCompletions } from "@/hooks/use-storage";
+import { useTaskStatuses, useCompletions, useAdaptiveTasks } from "@/hooks/use-storage";
 import { AssessmentDialog } from "@/components/self-assessment/assessment-dialog";
 import { Exercise } from "@/lib/types";
 
@@ -54,6 +55,8 @@ export default function TagesplanDatePage({
   const { date } = use(params);
   const { statuses, setTaskStatus, skipTask, skipDay } = useTaskStatuses();
   const { completions } = useCompletions();
+  const { tasks: adaptiveTasks, completeTask: completeAdaptiveTask, uncompleteTask: uncompleteAdaptiveTask } = useAdaptiveTasks();
+  const dayAdaptiveTasks = adaptiveTasks.filter((t) => t.date === date);
   const [assessExercise, setAssessExercise] = useState<{ exercise: Exercise; taskId: string } | null>(null);
   const [showSkipDayDialog, setShowSkipDayDialog] = useState(false);
 
@@ -61,6 +64,15 @@ export default function TagesplanDatePage({
   const dayIndex = PLAN_DATA.findIndex((d) => d.date === date);
   const prevDate = dayIndex > 0 ? PLAN_DATA[dayIndex - 1].date : null;
   const nextDate = dayIndex < PLAN_DATA.length - 1 ? PLAN_DATA[dayIndex + 1].date : null;
+
+  // Collect carried-over tasks from past days (not completed, marked carriedOver)
+  const carriedOverTasks = PLAN_DATA
+    .filter((d) => d.date < date)
+    .flatMap((d) =>
+      d.tasks
+        .filter((t) => statuses[t.id]?.carriedOver && !statuses[t.id]?.completed)
+        .map((t) => ({ ...t, originalDate: d.date, originalDay: d.day }))
+    );
 
   const week = WEEKS.find((w) => date >= w.start && date <= w.end);
 
@@ -123,6 +135,134 @@ export default function TagesplanDatePage({
         </div>
       )}
 
+      {/* Carried-over tasks from missed days */}
+      {carriedOverTasks.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="h-4 w-4 text-yellow-500" />
+            <h2 className="font-semibold text-sm text-yellow-600 dark:text-yellow-400">
+              Nachzuholen ({carriedOverTasks.length})
+            </h2>
+            <p className="text-xs text-muted-foreground">— von vergangenen Tagen</p>
+          </div>
+          {carriedOverTasks.map((task) => {
+            const style = SUBJECT_STYLES[task.subject];
+            const isDone = statuses[task.id]?.completed;
+            const originalDateObj = new Date(task.originalDate + "T00:00:00");
+            const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+            const originalLabel = `${task.originalDay} ${originalDateObj.getDate()}. ${monthNames[originalDateObj.getMonth()]}`;
+            return (
+              <Card key={task.id} className="border-l-4 border-l-yellow-500">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Checkbox
+                        checked={!!isDone}
+                        onCheckedChange={(checked) =>
+                          setTaskStatus(task.id, {
+                            completed: !!checked,
+                            completedAt: checked ? new Date().toISOString() : undefined,
+                            skipped: false,
+                            carriedOver: !checked,
+                          })
+                        }
+                      />
+                      <Badge variant={style.variant}>{style.label}</Badge>
+                      <CardTitle className={`text-base ${isDone ? "line-through opacity-50" : ""}`}>
+                        {task.title}
+                      </CardTitle>
+                      <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-400">
+                        von {originalLabel}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2 shrink-0 items-center">
+                      <Badge variant="secondary">{task.time}</Badge>
+                      <Badge variant="outline" className="text-xs">{TYPE_LABELS[task.type] || task.type}</Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-muted-foreground"
+                        title="Doch überspringen"
+                        onClick={() => setTaskStatus(task.id, { completed: false, skipped: true, carriedOver: false })}
+                      >
+                        <SkipForward className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                {!isDone && (
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">{task.description}</p>
+                    {task.resources.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {task.resources.map((res, i) => (
+                          res.url ? (
+                            <a key={i} href={res.url} target="_blank" rel="noopener noreferrer">
+                              <Badge variant="outline" className="cursor-pointer hover:bg-accent gap-1">
+                                {res.type === "book" ? <BookOpen className="h-3 w-3" /> : <ExternalLink className="h-3 w-3" />}
+                                {res.label}
+                              </Badge>
+                            </a>
+                          ) : (
+                            <Badge key={i} variant="outline" className="gap-1">
+                              <BookOpen className="h-3 w-3" />
+                              {res.label}
+                            </Badge>
+                          )
+                        ))}
+                      </div>
+                    )}
+                    {task.exercises.length > 0 && (
+                      <>
+                        <Separator />
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Aufgaben</p>
+                          {task.exercises.map((ex) => {
+                            const completion = completions.find((c) => c.exerciseId === ex.id);
+                            return (
+                              <button
+                                key={ex.id}
+                                onClick={() => setAssessExercise({ exercise: ex, taskId: task.id })}
+                                className="w-full flex items-center justify-between p-2 rounded-lg border border-border hover:bg-accent/50 transition-colors text-left"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <ClipboardCheck className={`h-4 w-4 ${completion ? "text-primary" : "text-muted-foreground"}`} />
+                                  <span className="text-sm">{ex.label}</span>
+                                  {ex.url && (
+                                    <a
+                                      href={ex.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {completion ? (
+                                    <Badge variant="secondary">{Math.round(completion.percentScore * 100)}%</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs">Bewerten</Badge>
+                                  )}
+                                  <span className="text-xs text-muted-foreground">/ {ex.maxPoints} P</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
+          <Separator />
+        </div>
+      )}
+
       {/* Tasks */}
       {dayPlan ? (
         <div className="space-y-4">
@@ -136,8 +276,8 @@ export default function TagesplanDatePage({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Checkbox
-                        checked={isDone}
-                        disabled={isSkipped}
+                        checked={!!isDone}
+                        disabled={!!isSkipped}
                         onCheckedChange={(checked) =>
                           setTaskStatus(task.id, {
                             completed: !!checked,
@@ -232,6 +372,17 @@ export default function TagesplanDatePage({
                                 <div className="flex items-center gap-2">
                                   <ClipboardCheck className={`h-4 w-4 ${completion ? "text-primary" : "text-muted-foreground"}`} />
                                   <span className="text-sm">{ex.label}</span>
+                                  {ex.url && (
+                                    <a
+                                      href={ex.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {completion ? (
@@ -262,6 +413,47 @@ export default function TagesplanDatePage({
             <p className="text-sm">Für dieses Datum sind keine Aufgaben geplant.</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Adaptive tasks for this day */}
+      {dayAdaptiveTasks.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="font-semibold text-sm text-primary">Adaptiv hinzugefügt ({dayAdaptiveTasks.length})</h2>
+            <p className="text-xs text-muted-foreground">— vom Lernalgorithmus empfohlen</p>
+          </div>
+          {dayAdaptiveTasks.map((t) => (
+            <Card key={t.id} className="border-l-4 border-l-primary">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Checkbox
+                      checked={!!t.completed}
+                      onCheckedChange={(checked) => checked ? completeAdaptiveTask(t.id) : uncompleteAdaptiveTask(t.id)}
+                    />
+                    <Badge variant={t.subject === "math" ? "default" : "secondary"}>
+                      {t.subject === "math" ? "Mathe" : "Prog"}
+                    </Badge>
+                    <CardTitle className={`text-base ${t.completed ? "line-through opacity-50" : ""}`}>
+                      {t.title}
+                    </CardTitle>
+                  </div>
+                  <div className="flex gap-2 shrink-0 items-center">
+                    <Badge variant="secondary">{t.durationMinutes} Min</Badge>
+                    <Badge variant="outline" className="text-xs">{t.type === "wiederholung" ? "Wiederholung" : "Lückenschluss"}</Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              {!t.completed && (
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{t.description}</p>
+                </CardContent>
+              )}
+            </Card>
+          ))}
+          <Separator />
+        </div>
       )}
 
       {/* Assessment Dialog */}
