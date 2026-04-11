@@ -18,9 +18,12 @@ import {
   ChevronRight,
   RotateCcw,
   Sparkles,
+  Zap,
+  Coffee,
+  X,
 } from "lucide-react";
 import { PLAN_DATA, WEEKS, PROG_EXAM_DATE, MATH_EXAM_DATE } from "@/lib/plan-data";
-import { useUser, useTaskStatuses, useAdaptiveHistory, useMasteries, useCompletions, useAdaptiveTasks } from "@/hooks/use-storage";
+import { useUser, useTaskStatuses, useAdaptiveHistory, useMasteries, useCompletions, useAdaptiveTasks, useAdaptiveOverrides } from "@/hooks/use-storage";
 
 function daysUntil(dateStr: string): number {
   const target = new Date(dateStr);
@@ -44,7 +47,8 @@ export default function DashboardPage() {
   const { user } = useUser();
   const { statuses, setTaskStatus, autoSkippedCount } = useTaskStatuses();
   const { completions, hydrated: completionsHydrated } = useCompletions();
-  const { history, refresh: refreshHistory, acceptProposal, rejectProposal } = useAdaptiveHistory();
+  const { overrides, setOverrides, deactivateNotfall } = useAdaptiveOverrides();
+  const { history, refresh: refreshHistory, acceptProposal, rejectProposal } = useAdaptiveHistory(setOverrides);
   const { tasks: adaptiveTasks, completeTask: completeAdaptiveTask, uncompleteTask: uncompleteAdaptiveTask } = useAdaptiveTasks();
 
   // Refresh proposals after auto-skip or after SM-2 hydration check resolves
@@ -90,6 +94,35 @@ export default function DashboardPage() {
           {currentWeek ? `${currentWeek.label} — ${currentWeek.phase}` : "Lernplan"}
         </p>
       </div>
+
+      {/* Notfall-Modus Banner */}
+      {overrides.notfallMode && (
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-destructive bg-destructive/10">
+          <Zap className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-destructive">Notfall-Modus aktiv</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Fokus auf Kernthemen (Priorität &quot;hoch&quot;). Niedrigprioritäre Themen vorerst überspringen. Mehr Zeit für Schwachstellen einplanen.
+            </p>
+          </div>
+          <Button variant="ghost" size="icon" className="shrink-0 text-destructive hover:text-destructive" onClick={deactivateNotfall}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Intensivwoche Banner */}
+      {overrides.intensifyWeekUntil && overrides.intensifyWeekUntil >= today && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-orange-500/50 bg-orange-500/10">
+          <Coffee className="h-5 w-5 text-orange-500 shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-orange-600 dark:text-orange-400">Intensivwoche aktiv</p>
+            <p className="text-sm text-muted-foreground">
+              Plane +30 Min/Tag bis {new Date(overrides.intensifyWeekUntil + "T00:00:00").toLocaleDateString("de-AT", { day: "numeric", month: "long" })}. Simulationsergebnis war unter Ziel.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Countdowns */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

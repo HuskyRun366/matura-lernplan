@@ -24,9 +24,11 @@ import {
   SkipForward,
   XCircle,
   RotateCcw,
+  Zap,
+  Coffee,
 } from "lucide-react";
 import { PLAN_DATA, WEEKS } from "@/lib/plan-data";
-import { useTaskStatuses, useCompletions, useAdaptiveTasks } from "@/hooks/use-storage";
+import { useTaskStatuses, useCompletions, useAdaptiveTasks, useAdaptiveOverrides } from "@/hooks/use-storage";
 import { AssessmentDialog } from "@/components/self-assessment/assessment-dialog";
 import { Exercise } from "@/lib/types";
 
@@ -54,8 +56,9 @@ export default function TagesplanDatePage({
 }) {
   const { date } = use(params);
   const { statuses, setTaskStatus, skipTask, skipDay } = useTaskStatuses();
-  const { completions } = useCompletions();
+  const { completions, refresh: refreshCompletions } = useCompletions();
   const { tasks: adaptiveTasks, completeTask: completeAdaptiveTask, uncompleteTask: uncompleteAdaptiveTask } = useAdaptiveTasks();
+  const { overrides } = useAdaptiveOverrides();
   const dayAdaptiveTasks = adaptiveTasks.filter((t) => t.date === date);
   const [assessExercise, setAssessExercise] = useState<{ exercise: Exercise; taskId: string } | null>(null);
   const [showSkipDayDialog, setShowSkipDayDialog] = useState(false);
@@ -114,6 +117,26 @@ export default function TagesplanDatePage({
           )}
         </div>
       </div>
+
+      {/* Notfall-Modus Banner */}
+      {overrides.notfallMode && (
+        <div className="flex items-center gap-3 p-3 rounded-lg border border-destructive bg-destructive/10">
+          <Zap className="h-4 w-4 text-destructive shrink-0" />
+          <p className="text-sm text-destructive font-medium">
+            Notfall-Modus aktiv — Fokus nur auf Kernthemen (Priorität &quot;hoch&quot;). Optionale Aufgaben überspringen.
+          </p>
+        </div>
+      )}
+
+      {/* Freier Halbtag Banner */}
+      {overrides.freeDays.includes(date) && (
+        <div className="flex items-center gap-3 p-3 rounded-lg border border-green-500/50 bg-green-500/10">
+          <Coffee className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+          <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+            Freier Halbtag — gut gemacht! Der adaptive Lernplan hat dir diesen Tag freigestellt. Aufgaben sind optional.
+          </p>
+        </div>
+      )}
 
       {/* Day type + skip-day button */}
       {dayPlan && (
@@ -482,7 +505,7 @@ export default function TagesplanDatePage({
           exercise={assessExercise.exercise}
           taskId={assessExercise.taskId}
           open={!!assessExercise}
-          onClose={() => setAssessExercise(null)}
+          onClose={() => { setAssessExercise(null); refreshCompletions(); }}
         />
       )}
 

@@ -5,6 +5,7 @@ import {
   SimulationResult,
   AdaptiveProposal,
   AdaptiveTask,
+  AdaptiveOverrides,
   STORAGE_KEYS,
 } from "./types";
 
@@ -109,6 +110,14 @@ export function updateAdaptiveTask(id: string, update: Partial<AdaptiveTask>): v
     all[idx] = { ...all[idx], ...update };
     set(STORAGE_KEYS.adaptiveTasks, all);
   }
+}
+
+// ── Adaptive Overrides ──
+export function getAdaptiveOverrides(): AdaptiveOverrides {
+  return get<AdaptiveOverrides>(STORAGE_KEYS.adaptiveOverrides) || { notfallMode: false, freeDays: [] };
+}
+export function setAdaptiveOverrides(overrides: AdaptiveOverrides): void {
+  set(STORAGE_KEYS.adaptiveOverrides, overrides);
 }
 
 // ── Export / Import / Reset ──

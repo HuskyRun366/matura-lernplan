@@ -8,6 +8,7 @@ import {
   SimulationResult,
   AdaptiveProposal,
   AdaptiveTask,
+  AdaptiveOverrides,
   TopicMastery,
 } from "@/lib/types";
 import * as storage from "@/lib/storage";
@@ -88,7 +89,11 @@ export function useCompletions() {
     [setCompletionsState]
   );
 
-  return { completions: completions ?? [], addCompletion, hydrated };
+  const refresh = useCallback(() => {
+    setCompletionsState(storage.getCompletions());
+  }, [setCompletionsState]);
+
+  return { completions: completions ?? [], addCompletion, refresh, hydrated };
 }
 
 export function useTaskStatuses() {
@@ -217,7 +222,7 @@ export function useSimResults() {
   return { results: results ?? [], addSimResult, hydrated };
 }
 
-export function useAdaptiveHistory() {
+export function useAdaptiveHistory(onOverridesChanged?: (o: AdaptiveOverrides) => void) {
   const { data: history, setData: setHistoryState, hydrated } = useLocalStorage<AdaptiveProposal[]>(
     "adaptiveHistory",
     () => storage.getAdaptiveHistory()
@@ -232,15 +237,44 @@ export function useAdaptiveHistory() {
       accepted: true,
       decidedAt: new Date().toISOString(),
     });
-    // Create real adaptive tasks for actionable changes
     const proposal = storage.getAdaptiveHistory().find((p) => p.id === id);
     if (proposal) {
+      // Create AdaptiveTasks for add_exercise / add_review_session / increase_time+topicId
       const existing = storage.getAdaptiveTasks();
       const newTasks = buildAdaptiveTasks(proposal, existing);
       for (const t of newTasks) storage.addAdaptiveTask(t);
+
+      // Apply overrides for grant_free_day / intensify_week / activate_notfall
+      const overrides = storage.getAdaptiveOverrides();
+      const today = new Date().toISOString().split("T")[0];
+      let overridesChanged = false;
+
+      for (const change of proposal.changes) {
+        if (change.type === "grant_free_day") {
+          const nextDay = PLAN_DATA.find((d) => d.date > today && d.type !== "exam");
+          if (nextDay && !overrides.freeDays.includes(nextDay.date)) {
+            overrides.freeDays.push(nextDay.date);
+            overridesChanged = true;
+          }
+        } else if (change.type === "activate_notfall") {
+          overrides.notfallMode = true;
+          overrides.notfallActivatedAt = new Date().toISOString();
+          overridesChanged = true;
+        } else if (change.type === "intensify_week") {
+          const until = new Date();
+          until.setDate(until.getDate() + 7);
+          overrides.intensifyWeekUntil = until.toISOString().split("T")[0];
+          overridesChanged = true;
+        }
+      }
+
+      if (overridesChanged) {
+        storage.setAdaptiveOverrides(overrides);
+        onOverridesChanged?.(overrides);
+      }
     }
     setHistoryState(storage.getAdaptiveHistory());
-  }, [setHistoryState]);
+  }, [setHistoryState, onOverridesChanged]);
 
   const rejectProposal = useCallback((id: string) => {
     storage.updateAdaptiveProposal(id, {
@@ -270,6 +304,38 @@ export function useAdaptiveTasks() {
   }, [setTasksState]);
 
   return { tasks: tasks ?? [], completeTask, uncompleteTask, hydrated };
+}
+
+export function useAdaptiveOverrides() {
+  const { data: overrides, setData: setOverridesState, hydrated } = useLocalStorage<AdaptiveOverrides>(
+    "adaptiveOverrides",
+    () => storage.getAdaptiveOverrides()
+  );
+
+  const setOverrides = useCallback((o: AdaptiveOverrides) => {
+    setOverridesState(o);
+  }, [setOverridesState]);
+
+  const deactivateNotfall = useCallback(() => {
+    const updated = { ...storage.getAdaptiveOverrides(), notfallMode: false };
+    storage.setAdaptiveOverrides(updated);
+    setOverridesState(updated);
+  }, [setOverridesState]);
+
+  const removeFreeDay = useCallback((date: string) => {
+    const cur = storage.getAdaptiveOverrides();
+    const updated = { ...cur, freeDays: cur.freeDays.filter((d) => d !== date) };
+    storage.setAdaptiveOverrides(updated);
+    setOverridesState(updated);
+  }, [setOverridesState]);
+
+  return {
+    overrides: overrides ?? { notfallMode: false, freeDays: [] },
+    setOverrides,
+    deactivateNotfall,
+    removeFreeDay,
+    hydrated,
+  };
 }
 
 export function useMasteries() {

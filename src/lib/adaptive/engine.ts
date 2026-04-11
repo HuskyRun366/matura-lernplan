@@ -445,7 +445,11 @@ export function buildAdaptiveTasks(
   const created: AdaptiveTask[] = [];
 
   for (const change of proposal.changes) {
-    if (change.type !== "add_exercise" && change.type !== "add_review_session") continue;
+    const isTaskable =
+      change.type === "add_exercise" ||
+      change.type === "add_review_session" ||
+      (change.type === "increase_time" && !!change.topicId);
+    if (!isTaskable) continue;
     if (!change.topicId) continue;
 
     const topic = getTopicById(change.topicId);
@@ -473,15 +477,18 @@ export function buildAdaptiveTasks(
     if (!targetDay) continue;
 
     const isReview = change.type === "add_review_session";
+    const isExtraTime = change.type === "increase_time";
     created.push({
       id: uuid(),
       date: targetDay.date,
       topicId: change.topicId,
       topicName: topic.name,
       subject,
-      title: isReview ? `Review: ${topic.name}` : `Nachholaufgabe: ${topic.name}`,
+      title: isReview ? `Review: ${topic.name}` : isExtraTime ? `Zusatzzeit: ${topic.name}` : `Nachholaufgabe: ${topic.name}`,
       description: isReview
         ? `Wiederholung von ${topic.name} — Schwächste Stellen gezielt üben. Vom adaptiven System empfohlen.`
+        : isExtraTime
+        ? `Mehr Zeit für ${topic.name} einplanen — Mastery noch unter Ziel. Zusätzliche Übungseinheit vom adaptiven System.`
         : `Nachholaufgabe ${topic.name} — übersprungene Inhalte aufholen. Vom adaptiven System empfohlen.`,
       durationMinutes: isReview ? 30 : 45,
       type: isReview ? "wiederholung" : "lueckenschluss",

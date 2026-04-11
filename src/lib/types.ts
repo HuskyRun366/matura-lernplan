@@ -203,6 +203,14 @@ export interface AdaptiveProposal {
   decidedAt?: string;
 }
 
+// ── Adaptive Overrides (applied when proposals are accepted) ──
+export interface AdaptiveOverrides {
+  notfallMode: boolean;
+  notfallActivatedAt?: string;
+  freeDays: string[];           // ISO dates granted as optional free days
+  intensifyWeekUntil?: string;  // ISO date until which intensify-week banner is shown
+}
+
 // ── Adaptive Tasks (created when proposals are accepted) ──
 export interface AdaptiveTask {
   id: string;
@@ -238,4 +246,5 @@ export const STORAGE_KEYS = {
   simResults: "mlp:sim-results",
   adaptiveHistory: "mlp:adaptive-history",
   adaptiveTasks: "mlp:adaptive-tasks",
+  adaptiveOverrides: "mlp:adaptive-overrides",
 } as const;
