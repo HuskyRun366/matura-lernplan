@@ -229,15 +229,25 @@ export default function TagesplanDatePage({
                                   <ClipboardCheck className={`h-4 w-4 ${completion ? "text-primary" : "text-muted-foreground"}`} />
                                   <span className="text-sm">{ex.label}</span>
                                   {ex.url && (
-                                    <a
-                                      href={ex.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                    </a>
+                                    ex.url.startsWith("/") ? (
+                                      <Link
+                                        href={ex.url}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                                      >
+                                        <BookOpen className="h-3 w-3" />
+                                      </Link>
+                                    ) : (
+                                      <a
+                                        href={ex.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                      </a>
+                                    )
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -373,15 +383,25 @@ export default function TagesplanDatePage({
                                   <ClipboardCheck className={`h-4 w-4 ${completion ? "text-primary" : "text-muted-foreground"}`} />
                                   <span className="text-sm">{ex.label}</span>
                                   {ex.url && (
-                                    <a
-                                      href={ex.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                    </a>
+                                    ex.url.startsWith("/") ? (
+                                      <Link
+                                        href={ex.url}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                                      >
+                                        <BookOpen className="h-3 w-3" />
+                                      </Link>
+                                    ) : (
+                                      <a
+                                        href={ex.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                      </a>
+                                    )
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2">

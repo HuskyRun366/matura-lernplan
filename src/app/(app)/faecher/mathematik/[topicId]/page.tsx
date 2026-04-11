@@ -5,11 +5,12 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ExternalLink, BookOpen, CheckCircle2 } from "lucide-react";
+import { ExternalLink, BookOpen, CheckCircle2, FlaskConical } from "lucide-react";
 import { MATH_TOPICS } from "@/lib/topics-data";
 import { PLAN_DATA } from "@/lib/plan-data";
 import { useMasteries, useCompletions } from "@/hooks/use-storage";
 import { MasteryBar } from "@/components/subjects/mastery-bar";
+import { MATHE_THEORIE } from "@/lib/mathe-theorie-data";
 
 export default function MathTopicPage({ params }: { params: Promise<{ topicId: string }> }) {
   const { topicId } = use(params);
@@ -23,6 +24,7 @@ export default function MathTopicPage({ params }: { params: Promise<{ topicId: s
 
   const mastery = masteries[topicId];
   const topicCompletions = completions.filter((c) => c.topicId === topicId);
+  const theorie = MATHE_THEORIE[topicId];
 
   const relatedExercises = PLAN_DATA.flatMap((day) =>
     day.tasks.flatMap((task) =>
@@ -87,6 +89,34 @@ export default function MathTopicPage({ params }: { params: Promise<{ topicId: s
           ))}
         </CardContent>
       </Card>
+
+      {/* Formeln & Beispiele */}
+      {theorie && (
+        <div className="space-y-4">
+          <h2 className="text-base font-semibold flex items-center gap-2">
+            <FlaskConical className="h-4 w-4" />
+            Formeln &amp; Beispiele
+          </h2>
+          {theorie.sections.map((section, i) => (
+            <Card key={i} className="border-l-4 border-l-primary/40">
+              <CardContent className="p-4 space-y-3">
+                <h3 className="font-semibold text-sm">{section.heading}</h3>
+                <pre className="text-xs leading-relaxed whitespace-pre-wrap font-mono bg-muted/50 rounded p-3 text-foreground">
+                  {section.body}
+                </pre>
+                {section.example && (
+                  <>
+                    <p className="text-xs font-medium text-primary uppercase tracking-wide">Beispiel</p>
+                    <pre className="text-xs leading-relaxed whitespace-pre-wrap font-mono bg-primary/5 border border-primary/20 rounded p-3 text-foreground">
+                      {section.example}
+                    </pre>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Exercises */}
       <Card>
