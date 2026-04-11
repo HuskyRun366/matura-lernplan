@@ -316,6 +316,9 @@ export default function DashboardPage() {
                       <Badge variant="secondary" className="text-xs">{t.durationMinutes} Min</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+                    {t.proposalTrigger && (
+                      <p className="text-xs text-muted-foreground/60 mt-0.5 italic">Auslöser: {t.proposalTrigger}</p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -334,9 +337,15 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {pending.map((proposal) => (
-              <div key={proposal.id} className="p-3 rounded-lg border border-border bg-muted/50 space-y-2">
-                <p className="text-sm font-medium">{proposal.triggerDetails}</p>
+            {pending.map((proposal) => {
+              const isOverdueSM2 = proposal.trigger === "sm2_review" &&
+                proposal.changes.some((c) => c.reason?.includes("überfällig"));
+              return (
+              <div key={proposal.id} className={`p-3 rounded-lg border bg-muted/50 space-y-2 ${isOverdueSM2 ? "border-destructive" : "border-border"}`}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium">{proposal.triggerDetails}</p>
+                  {isOverdueSM2 && <Badge variant="destructive" className="text-xs">Überfällig</Badge>}
+                </div>
                 <ul className="space-y-1">
                   {proposal.changes.map((change, i) => (
                     <li key={i} className="text-xs text-muted-foreground">{change.description}</li>
@@ -351,7 +360,8 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}

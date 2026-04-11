@@ -28,7 +28,20 @@ import {
   Coffee,
 } from "lucide-react";
 import { PLAN_DATA, WEEKS } from "@/lib/plan-data";
+import { MATH_TOPICS, PROG_TOPICS } from "@/lib/topics-data";
+import { PlanTask } from "@/lib/types";
 import { useTaskStatuses, useCompletions, useAdaptiveTasks, useAdaptiveOverrides } from "@/hooks/use-storage";
+
+function isLowPriorityTask(task: PlanTask): boolean {
+  if (task.topicIds.length === 0) return false;
+  return task.topicIds.every((id) => {
+    const mt = MATH_TOPICS[id];
+    if (mt) return mt.priority === "basis" || mt.priority === "mittel";
+    const pt = PROG_TOPICS[id];
+    if (pt) return pt.priority >= 3;
+    return false;
+  });
+}
 import { AssessmentDialog } from "@/components/self-assessment/assessment-dialog";
 import { Exercise } from "@/lib/types";
 
@@ -303,8 +316,9 @@ export default function TagesplanDatePage({
             const style = SUBJECT_STYLES[task.subject];
             const isDone = statuses[task.id]?.completed;
             const isSkipped = statuses[task.id]?.skipped;
+            const isOptional = overrides.notfallMode && isLowPriorityTask(task);
             return (
-              <Card key={task.id} className={`border-l-4 ${isSkipped ? "opacity-50" : ""}`}>
+              <Card key={task.id} className={`border-l-4 ${isSkipped ? "opacity-50" : ""} ${isOptional ? "opacity-60" : ""}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -332,6 +346,9 @@ export default function TagesplanDatePage({
                         <Badge variant="outline">
                           <Sparkles className="h-3 w-3 mr-1" /> Adaptiv
                         </Badge>
+                      )}
+                      {isOptional && (
+                        <Badge variant="outline" className="text-xs text-muted-foreground border-dashed">Optional</Badge>
                       )}
                       {!isDone && !isSkipped && (
                         <Button
@@ -491,6 +508,9 @@ export default function TagesplanDatePage({
               {!t.completed && (
                 <CardContent>
                   <p className="text-sm text-muted-foreground">{t.description}</p>
+                  {t.proposalTrigger && (
+                    <p className="text-xs text-muted-foreground/60 mt-1 italic">Auslöser: {t.proposalTrigger}</p>
+                  )}
                 </CardContent>
               )}
             </Card>

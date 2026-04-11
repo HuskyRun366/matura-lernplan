@@ -74,8 +74,10 @@ export default function MathematikPage() {
                       </div>
                     </div>
                     <MasteryBar value={m?.currentScore ?? 0} />
-                    {m && (
+                    {m ? (
                       <p className="text-xs text-muted-foreground">{m.exerciseCount} Aufgaben bearbeitet</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Noch nicht begonnen</p>
                     )}
                   </CardContent>
                 </Card>
@@ -108,8 +110,10 @@ export default function MathematikPage() {
                       </div>
                     </div>
                     <MasteryBar value={m?.currentScore ?? 0} />
-                    {m && (
+                    {m ? (
                       <p className="text-xs text-muted-foreground">{m.exerciseCount} Aufgaben bearbeitet</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Noch nicht begonnen</p>
                     )}
                   </CardContent>
                 </Card>

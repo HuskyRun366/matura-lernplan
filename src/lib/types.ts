@@ -222,7 +222,8 @@ export interface AdaptiveTask {
   description: string;
   durationMinutes: number;
   type: "wiederholung" | "lueckenschluss";
-  proposalId: string;    // which proposal created this
+  proposalId: string;      // which proposal created this
+  proposalTrigger?: string; // triggerDetails from the originating proposal
   createdAt: string;
   completed: boolean;
   completedAt?: string;

@@ -2,10 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Clock, CheckCircle2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Clock, CheckCircle2, Timer } from "lucide-react";
 import { MATH_TOPICS, PROG_TOPICS } from "@/lib/topics-data";
 import { SIMULATIONS, PLAN_DATA } from "@/lib/plan-data";
-import { useMasteries, useSimResults, useTaskStatuses, useAdaptiveHistory } from "@/hooks/use-storage";
+import { useMasteries, useSimResults, useTaskStatuses, useAdaptiveHistory, useCompletions } from "@/hooks/use-storage";
 import { MasteryBar } from "@/components/subjects/mastery-bar";
 import {
   ResponsiveContainer,
@@ -19,11 +19,18 @@ import {
   Line,
 } from "recharts";
 
+const TrendIcon = ({ trend }: { trend?: string }) => {
+  if (trend === "improving") return <TrendingUp className="h-3 w-3 text-primary" />;
+  if (trend === "declining") return <TrendingDown className="h-3 w-3 text-destructive" />;
+  return <Minus className="h-3 w-3 text-muted-foreground" />;
+};
+
 export default function FortschrittPage() {
   const { masteries } = useMasteries();
   const { results } = useSimResults();
   const { statuses } = useTaskStatuses();
   const { history } = useAdaptiveHistory();
+  const { completions } = useCompletions();
 
   const mathTopicData = Object.entries(MATH_TOPICS).map(([id, topic]) => ({
     name: id,
@@ -55,6 +62,21 @@ export default function FortschrittPage() {
     return { name: `W${w}`, total, done, percent: total > 0 ? Math.round((done / total) * 100) : 0 };
   });
 
+  // Time analytics
+  const timePerTopic = completions.reduce<Record<string, number>>((acc, c) => {
+    if (c.timeSpentMinutes) acc[c.topicId] = (acc[c.topicId] ?? 0) + c.timeSpentMinutes;
+    return acc;
+  }, {});
+  const totalTimeMinutes = Object.values(timePerTopic).reduce((s, v) => s + v, 0);
+  const timeData = Object.entries(timePerTopic)
+    .map(([topicId, minutes]) => ({
+      topicId,
+      name: (MATH_TOPICS[topicId] ?? PROG_TOPICS[topicId])?.name ?? topicId,
+      minutes,
+    }))
+    .sort((a, b) => b.minutes - a.minutes)
+    .slice(0, 10);
+
   const tooltipStyle = {
     backgroundColor: "var(--card)",
     border: "1px solid var(--border)",
@@ -62,10 +84,8 @@ export default function FortschrittPage() {
     color: "var(--foreground)",
   };
 
-  // oklch-Werte direkt – CSS Custom Properties funktionieren nicht in SVG-Attributen
   const COLOR_MUTED = "oklch(0.556 0 0)";
   const COLOR_PRIMARY = "oklch(0.87 0 0)";
-
   const tickStyle = { fill: COLOR_MUTED };
 
   return (
@@ -135,6 +155,8 @@ export default function FortschrittPage() {
               <div className="flex-1">
                 <MasteryBar value={d.mastery / 100} />
               </div>
+              <TrendIcon trend={masteries[d.name]?.trend} />
+              <span className="text-xs text-muted-foreground w-8 text-right tabular-nums">{d.mastery}%</span>
             </div>
           ))}
         </CardContent>
@@ -152,10 +174,41 @@ export default function FortschrittPage() {
               <div className="flex-1">
                 <MasteryBar value={d.mastery / 100} />
               </div>
+              <TrendIcon trend={masteries[d.name]?.trend} />
+              <span className="text-xs text-muted-foreground w-8 text-right tabular-nums">{d.mastery}%</span>
             </div>
           ))}
         </CardContent>
       </Card>
+
+      {/* Time per topic */}
+      {totalTimeMinutes > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Timer className="h-4 w-4" />
+              Zeit nach Thema
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Gesamt erfasst: {Math.floor(totalTimeMinutes / 60)} Std {totalTimeMinutes % 60} Min
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {timeData.map((d) => (
+              <div key={d.topicId} className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground w-32 shrink-0 truncate">{d.name}</span>
+                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${Math.round((d.minutes / timeData[0].minutes) * 100)}%` }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0 tabular-nums w-14 text-right">{d.minutes} Min</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Adaptive History */}
       {history.length > 0 && (
@@ -167,19 +220,26 @@ export default function FortschrittPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {history.slice().reverse().slice(0, 10).map((h) => (
-              <div key={h.id} className="border-l-2 border-border pl-3 py-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">{h.triggerDetails}</p>
-                  <Badge variant={h.accepted === true ? "default" : h.accepted === false ? "destructive" : "secondary"} className="text-xs">
-                    {h.accepted === true ? "Akzeptiert" : h.accepted === false ? "Abgelehnt" : "Offen"}
-                  </Badge>
+            {history.slice().reverse().slice(0, 10).map((h) => {
+              const isOverdueSM2 = h.trigger === "sm2_review" &&
+                h.changes.some((c) => c.reason?.includes("überfällig"));
+              return (
+                <div key={h.id} className={`border-l-2 pl-3 py-1 ${isOverdueSM2 ? "border-destructive" : "border-border"}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium">{h.triggerDetails}</p>
+                    <Badge variant={h.accepted === true ? "default" : h.accepted === false ? "destructive" : "secondary"} className="text-xs">
+                      {h.accepted === true ? "Akzeptiert" : h.accepted === false ? "Abgelehnt" : "Offen"}
+                    </Badge>
+                    {isOverdueSM2 && h.accepted === undefined && (
+                      <Badge variant="destructive" className="text-xs">Überfällig</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(h.timestamp).toLocaleDateString("de-DE")}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(h.timestamp).toLocaleDateString("de-DE")}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}

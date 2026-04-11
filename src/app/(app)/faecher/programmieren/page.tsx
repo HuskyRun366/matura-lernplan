@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { BookOpen, FileText, Wrench, Network, Cpu, GitBranch, FileCode2, Zap } from "lucide-react";
+import { BookOpen, FileText, Wrench, Network, Cpu, GitBranch, FileCode2, Zap, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { PROG_TOPICS } from "@/lib/topics-data";
 import { useMasteries } from "@/hooks/use-storage";
 import { MasteryBar } from "@/components/subjects/mastery-bar";
@@ -26,6 +26,12 @@ function getCardTheme(topicIds: string[]) {
   }
   return { border: "hover:border-muted-foreground/30", badge: "bg-muted text-muted-foreground", icon: FileText, dot: "bg-muted-foreground" };
 }
+
+const TrendIcon = ({ trend }: { trend?: string }) => {
+  if (trend === "improving") return <TrendingUp className="h-3 w-3 text-primary" />;
+  if (trend === "declining") return <TrendingDown className="h-3 w-3 text-destructive" />;
+  return <Minus className="h-3 w-3 text-muted-foreground" />;
+};
 
 const PRIO_SECTIONS: Record<number, string> = {
   1: "Muss sitzen",
@@ -66,7 +72,8 @@ export default function ProgrammierenPage() {
                     <CardContent className="p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-sm">{topic.name}</span>
-                        <div className="flex gap-1">
+                        <div className="flex items-center gap-1">
+                          <TrendIcon trend={m?.trend} />
                           {topic.project && (
                             <Badge variant="outline" className="text-xs">{topic.project}</Badge>
                           )}
@@ -74,11 +81,15 @@ export default function ProgrammierenPage() {
                         </div>
                       </div>
                       <MasteryBar value={m?.currentScore ?? 0} />
-                      {topic.bookChapters.length > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      {m ? (
+                        <p className="text-xs text-muted-foreground">{m.exerciseCount} Aufgaben bearbeitet</p>
+                      ) : topic.bookChapters.length > 0 ? (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground italic">
                           <BookOpen className="h-3 w-3" />
-                          Kap. {topic.bookChapters.join(", ")}
+                          Noch nicht begonnen · Kap. {topic.bookChapters.join(", ")}
                         </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">Noch nicht begonnen</p>
                       )}
                     </CardContent>
                   </Card>

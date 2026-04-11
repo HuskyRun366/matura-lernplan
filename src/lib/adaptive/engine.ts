@@ -493,6 +493,7 @@ export function buildAdaptiveTasks(
       durationMinutes: isReview ? 30 : 45,
       type: isReview ? "wiederholung" : "lueckenschluss",
       proposalId: proposal.id,
+      proposalTrigger: proposal.triggerDetails,
       createdAt: new Date().toISOString(),
       completed: false,
     });
