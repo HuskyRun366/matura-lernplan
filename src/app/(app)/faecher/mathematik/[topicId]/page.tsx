@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ExternalLink, BookOpen, CheckCircle2, FlaskConical } from "lucide-react";
 import { MATH_TOPICS } from "@/lib/topics-data";
-import { PLAN_DATA } from "@/lib/plan-data";
-import { useMasteries, useCompletions } from "@/hooks/use-storage";
+import { useMasteries, useCompletions, useUserTasks } from "@/hooks/use-storage";
 import { MasteryBar } from "@/components/subjects/mastery-bar";
 import { MATHE_THEORIE } from "@/lib/mathe-theorie-data";
 
@@ -16,6 +15,7 @@ export default function MathTopicPage({ params }: { params: Promise<{ topicId: s
   const { topicId } = use(params);
   const { masteries } = useMasteries();
   const { completions } = useCompletions();
+  const { allTasks } = useUserTasks();
 
   const topic = MATH_TOPICS[topicId];
   if (!topic) {
@@ -26,13 +26,13 @@ export default function MathTopicPage({ params }: { params: Promise<{ topicId: s
   const topicCompletions = completions.filter((c) => c.topicId === topicId);
   const theorie = MATHE_THEORIE[topicId];
 
-  const relatedExercises = PLAN_DATA.flatMap((day) =>
-    day.tasks.flatMap((task) =>
+  const relatedExercises = allTasks
+    .filter((task) => task.topicIds.includes(topicId))
+    .flatMap((task) =>
       task.exercises
         .filter((ex) => ex.topicId === topicId)
-        .map((ex) => ({ ...ex, date: day.date, taskTitle: task.title }))
-    )
-  );
+        .map((ex) => ({ ...ex, date: task.date, taskTitle: task.title }))
+    );
 
   return (
     <div className="space-y-6">

@@ -13,13 +13,22 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Download, Upload, Trash2, User } from "lucide-react";
-import { useUser } from "@/hooks/use-storage";
+import { Download, Upload, Trash2, User, Calendar, Sparkles } from "lucide-react";
+import { useUser, usePlanConfig } from "@/hooks/use-storage";
 import * as storage from "@/lib/storage";
 
 export default function EinstellungenPage() {
   const { user, setUser } = useUser();
+  const { config, setConfig } = usePlanConfig();
   const [name, setName] = useState(user?.name ?? "");
+  const [progDate, setProgDate] = useState(config?.progExamDate ?? "");
+  const [mathDate, setMathDate] = useState(config?.mathExamDate ?? "");
+  const [budgetHours, setBudgetHours] = useState(
+    config ? Math.round(config.dailyTimeBudgetMinutes / 60) : 4
+  );
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(
+    config?.suggestionsEnabled ?? true
+  );
   const [showReset, setShowReset] = useState(false);
   const [importError, setImportError] = useState("");
 
@@ -27,6 +36,24 @@ export default function EinstellungenPage() {
     if (!user || !name.trim()) return;
     setUser({ ...user, name: name.trim() });
   }
+
+  function handlePlanSave() {
+    if (!config) return;
+    setConfig({
+      ...config,
+      progExamDate: progDate,
+      mathExamDate: mathDate,
+      dailyTimeBudgetMinutes: budgetHours * 60,
+      suggestionsEnabled,
+    });
+  }
+
+  const planDirty =
+    !!config &&
+    (progDate !== config.progExamDate ||
+      mathDate !== config.mathExamDate ||
+      budgetHours * 60 !== config.dailyTimeBudgetMinutes ||
+      suggestionsEnabled !== config.suggestionsEnabled);
 
   function handleExport() {
     const data = storage.exportAllData();
@@ -91,6 +118,69 @@ export default function EinstellungenPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Plan-Konfiguration */}
+      {config && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Calendar className="h-4 w-4" /> Plan-Konfiguration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="s-prog-date">Prüfungstermin Programmieren</Label>
+                <Input
+                  id="s-prog-date"
+                  type="date"
+                  value={progDate}
+                  onChange={(e) => setProgDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="s-math-date">Prüfungstermin Mathematik</Label>
+                <Input
+                  id="s-math-date"
+                  type="date"
+                  value={mathDate}
+                  onChange={(e) => setMathDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="s-budget">
+                Tägliches Lernbudget: {budgetHours} Stunden
+              </Label>
+              <input
+                id="s-budget"
+                type="range"
+                min={1}
+                max={6}
+                step={1}
+                value={budgetHours}
+                onChange={(e) => setBudgetHours(parseInt(e.target.value))}
+                className="w-full"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={suggestionsEnabled}
+                onChange={(e) => setSuggestionsEnabled(e.target.checked)}
+              />
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
+              <span>Vorschläge der App anzeigen</span>
+            </label>
+            <Button
+              onClick={handlePlanSave}
+              disabled={!planDirty || !progDate || !mathDate}
+            >
+              Plan-Einstellungen speichern
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Data Management */}
       <Card>

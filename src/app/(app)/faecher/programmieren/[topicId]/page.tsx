@@ -6,14 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, BookOpen, CheckCircle2 } from "lucide-react";
 import { PROG_TOPICS } from "@/lib/topics-data";
-import { PLAN_DATA } from "@/lib/plan-data";
-import { useMasteries, useCompletions } from "@/hooks/use-storage";
+import { useMasteries, useCompletions, useUserTasks } from "@/hooks/use-storage";
 import { MasteryBar } from "@/components/subjects/mastery-bar";
 
 export default function ProgTopicPage({ params }: { params: Promise<{ topicId: string }> }) {
   const { topicId } = use(params);
   const { masteries } = useMasteries();
   const { completions } = useCompletions();
+  const { allTasks } = useUserTasks();
 
   const topic = PROG_TOPICS[topicId];
   if (!topic) {
@@ -23,13 +23,13 @@ export default function ProgTopicPage({ params }: { params: Promise<{ topicId: s
   const mastery = masteries[topicId];
   const topicCompletions = completions.filter((c) => c.topicId === topicId);
 
-  const relatedExercises = PLAN_DATA.flatMap((day) =>
-    day.tasks.flatMap((task) =>
+  const relatedExercises = allTasks
+    .filter((task) => task.topicIds.includes(topicId))
+    .flatMap((task) =>
       task.exercises
         .filter((ex) => ex.topicId === topicId)
-        .map((ex) => ({ ...ex, date: day.date, taskTitle: task.title }))
-    )
-  );
+        .map((ex) => ({ ...ex, date: task.date, taskTitle: task.title }))
+    );
 
   return (
     <div className="space-y-6">

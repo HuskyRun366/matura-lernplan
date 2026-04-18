@@ -1,19 +1,19 @@
 import {
   UserProfile,
+  UserPlanConfig,
+  UserTask,
+  TaskSuggestion,
   ExerciseCompletion,
-  TaskStatus,
   SimulationResult,
-  AdaptiveProposal,
-  AdaptiveTask,
-  AdaptiveOverrides,
   STORAGE_KEYS,
+  CURRENT_SCHEMA_VERSION,
 } from "./types";
 
 function get<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
@@ -24,6 +24,40 @@ function set<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+// ── Schema version / migration ──
+// On first load after the redesign (v2), drop all plan-bound data.
+// The user's name survives so they don't re-onboard the identity step.
+const LEGACY_KEYS_TO_PURGE = [
+  "mlp:task-status",
+  "mlp:adaptive-history",
+  "mlp:adaptive-tasks",
+  "mlp:adaptive-overrides",
+];
+
+export function getSchemaVersion(): number {
+  return get<number>(STORAGE_KEYS.schemaVersion) ?? 1;
+}
+
+export function runMigrationIfNeeded(): boolean {
+  if (typeof window === "undefined") return false;
+  const current = getSchemaVersion();
+  if (current >= CURRENT_SCHEMA_VERSION) return false;
+
+  // v1 → v2: Reset plan, completions and simulation results.
+  // Keep: user profile. Drop: everything else.
+  for (const legacy of LEGACY_KEYS_TO_PURGE) {
+    localStorage.removeItem(legacy);
+  }
+  localStorage.removeItem(STORAGE_KEYS.completions);
+  localStorage.removeItem(STORAGE_KEYS.simResults);
+  localStorage.removeItem(STORAGE_KEYS.userTasks);
+  localStorage.removeItem(STORAGE_KEYS.suggestions);
+  localStorage.removeItem(STORAGE_KEYS.planConfig);
+
+  set(STORAGE_KEYS.schemaVersion, CURRENT_SCHEMA_VERSION);
+  return true;
+}
+
 // ── User ──
 export function getUser(): UserProfile | null {
   return get<UserProfile>(STORAGE_KEYS.user);
@@ -32,92 +66,117 @@ export function setUser(user: UserProfile): void {
   set(STORAGE_KEYS.user, user);
 }
 
-// ── Completions ──
-export function getCompletions(): ExerciseCompletion[] {
-  return get<ExerciseCompletion[]>(STORAGE_KEYS.completions) || [];
+// ── Plan Config ──
+export function getPlanConfig(): UserPlanConfig | null {
+  return get<UserPlanConfig>(STORAGE_KEYS.planConfig);
 }
-export function addCompletion(completion: ExerciseCompletion): void {
-  const all = getCompletions();
-  // Replace if same exerciseId exists
-  const idx = all.findIndex((c) => c.exerciseId === completion.exerciseId);
-  if (idx >= 0) {
-    all[idx] = completion;
-  } else {
-    all.push(completion);
-  }
-  set(STORAGE_KEYS.completions, all);
+export function setPlanConfig(config: UserPlanConfig): void {
+  set(STORAGE_KEYS.planConfig, config);
 }
 
-// ── Task Status ──
-export function getTaskStatuses(): Record<string, TaskStatus> {
-  return get<Record<string, TaskStatus>>(STORAGE_KEYS.taskStatus) || {};
+// ── User Tasks (keyed by ISO date) ──
+export function getUserTasksByDate(): Record<string, UserTask[]> {
+  return get<Record<string, UserTask[]>>(STORAGE_KEYS.userTasks) ?? {};
 }
-export function setTaskStatus(taskId: string, status: TaskStatus): void {
-  const all = getTaskStatuses();
-  all[taskId] = status;
-  set(STORAGE_KEYS.taskStatus, all);
+
+export function getUserTasksForDate(date: string): UserTask[] {
+  const all = getUserTasksByDate();
+  return all[date] ?? [];
+}
+
+export function getAllUserTasks(): UserTask[] {
+  const byDate = getUserTasksByDate();
+  return Object.values(byDate).flat();
+}
+
+export function addUserTask(task: UserTask): void {
+  const all = getUserTasksByDate();
+  const list = all[task.date] ?? [];
+  list.push(task);
+  all[task.date] = list;
+  set(STORAGE_KEYS.userTasks, all);
+}
+
+export function updateUserTask(id: string, update: Partial<UserTask>): void {
+  const all = getUserTasksByDate();
+  for (const date of Object.keys(all)) {
+    const idx = all[date].findIndex((t) => t.id === id);
+    if (idx >= 0) {
+      all[date][idx] = { ...all[date][idx], ...update };
+      set(STORAGE_KEYS.userTasks, all);
+      return;
+    }
+  }
+}
+
+export function deleteUserTask(id: string): void {
+  const all = getUserTasksByDate();
+  for (const date of Object.keys(all)) {
+    const before = all[date].length;
+    all[date] = all[date].filter((t) => t.id !== id);
+    if (all[date].length !== before) {
+      if (all[date].length === 0) delete all[date];
+      set(STORAGE_KEYS.userTasks, all);
+      return;
+    }
+  }
+}
+
+// ── Suggestions ──
+export function getSuggestions(): TaskSuggestion[] {
+  return get<TaskSuggestion[]>(STORAGE_KEYS.suggestions) ?? [];
+}
+
+export function setSuggestions(suggestions: TaskSuggestion[]): void {
+  set(STORAGE_KEYS.suggestions, suggestions);
+}
+
+export function updateSuggestion(id: string, update: Partial<TaskSuggestion>): void {
+  const all = getSuggestions();
+  const idx = all.findIndex((s) => s.id === id);
+  if (idx >= 0) {
+    all[idx] = { ...all[idx], ...update };
+    setSuggestions(all);
+  }
+}
+
+// Replace all pending (not accepted, not dismissed) suggestions for a given
+// date with a freshly generated batch. Preserves user's accept/dismiss state.
+export function replacePendingSuggestionsForDate(
+  date: string,
+  fresh: TaskSuggestion[]
+): void {
+  const existing = getSuggestions();
+  const kept = existing.filter(
+    (s) => s.date !== date || s.accepted || s.dismissed
+  );
+  setSuggestions([...kept, ...fresh]);
+}
+
+// ── Completions ──
+export function getCompletions(): ExerciseCompletion[] {
+  return get<ExerciseCompletion[]>(STORAGE_KEYS.completions) ?? [];
+}
+
+export function addCompletion(completion: ExerciseCompletion): void {
+  const all = getCompletions();
+  const idx = all.findIndex((c) => c.exerciseId === completion.exerciseId);
+  if (idx >= 0) all[idx] = completion;
+  else all.push(completion);
+  set(STORAGE_KEYS.completions, all);
 }
 
 // ── Simulation Results ──
 export function getSimResults(): SimulationResult[] {
-  return get<SimulationResult[]>(STORAGE_KEYS.simResults) || [];
+  return get<SimulationResult[]>(STORAGE_KEYS.simResults) ?? [];
 }
+
 export function addSimResult(result: SimulationResult): void {
   const all = getSimResults();
   const idx = all.findIndex((r) => r.simulationId === result.simulationId);
-  if (idx >= 0) {
-    all[idx] = result;
-  } else {
-    all.push(result);
-  }
+  if (idx >= 0) all[idx] = result;
+  else all.push(result);
   set(STORAGE_KEYS.simResults, all);
-}
-
-// ── Adaptive History ──
-export function getAdaptiveHistory(): AdaptiveProposal[] {
-  return get<AdaptiveProposal[]>(STORAGE_KEYS.adaptiveHistory) || [];
-}
-export function addAdaptiveProposal(proposal: AdaptiveProposal): void {
-  const all = getAdaptiveHistory();
-  all.push(proposal);
-  set(STORAGE_KEYS.adaptiveHistory, all);
-}
-export function updateAdaptiveProposal(
-  id: string,
-  update: Partial<AdaptiveProposal>
-): void {
-  const all = getAdaptiveHistory();
-  const idx = all.findIndex((p) => p.id === id);
-  if (idx >= 0) {
-    all[idx] = { ...all[idx], ...update };
-    set(STORAGE_KEYS.adaptiveHistory, all);
-  }
-}
-
-// ── Adaptive Tasks ──
-export function getAdaptiveTasks(): AdaptiveTask[] {
-  return get<AdaptiveTask[]>(STORAGE_KEYS.adaptiveTasks) || [];
-}
-export function addAdaptiveTask(task: AdaptiveTask): void {
-  const all = getAdaptiveTasks();
-  all.push(task);
-  set(STORAGE_KEYS.adaptiveTasks, all);
-}
-export function updateAdaptiveTask(id: string, update: Partial<AdaptiveTask>): void {
-  const all = getAdaptiveTasks();
-  const idx = all.findIndex((t) => t.id === id);
-  if (idx >= 0) {
-    all[idx] = { ...all[idx], ...update };
-    set(STORAGE_KEYS.adaptiveTasks, all);
-  }
-}
-
-// ── Adaptive Overrides ──
-export function getAdaptiveOverrides(): AdaptiveOverrides {
-  return get<AdaptiveOverrides>(STORAGE_KEYS.adaptiveOverrides) || { notfallMode: false, freeDays: [] };
-}
-export function setAdaptiveOverrides(overrides: AdaptiveOverrides): void {
-  set(STORAGE_KEYS.adaptiveOverrides, overrides);
 }
 
 // ── Export / Import / Reset ──

@@ -1,128 +1,114 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
 import {
   Calculator,
   Code,
   Calendar,
-  TrendingUp,
-  CheckCircle2,
-  AlertTriangle,
   ChevronRight,
-  RotateCcw,
-  Sparkles,
-  Zap,
-  Coffee,
-  X,
+  CheckCircle2,
 } from "lucide-react";
-import { PLAN_DATA, WEEKS, PROG_EXAM_DATE, MATH_EXAM_DATE } from "@/lib/plan-data";
-import { useUser, useTaskStatuses, useAdaptiveHistory, useMasteries, useCompletions, useAdaptiveTasks, useAdaptiveOverrides } from "@/hooks/use-storage";
-
-function daysUntil(dateStr: string): number {
-  const target = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
+import {
+  useUser,
+  usePlanConfig,
+  useMasteries,
+  useCompletions,
+  useUserTasks,
+} from "@/hooks/use-storage";
+import {
+  aggregateByCategory,
+  aggregateByDate,
+  calculateOverallProgress,
+} from "@/lib/progress/aggregate";
+import { CategoryProgressList } from "@/components/dashboard/category-progress";
 
 function todayStr(): string {
   return new Date().toISOString().split("T")[0];
 }
 
-const SUBJECT_STYLES = {
-  math: { variant: "default" as const, label: "Mathe" },
-  prog: { variant: "secondary" as const, label: "Prog" },
-  sim: { variant: "outline" as const, label: "Simulation" },
-};
+function daysUntil(dateStr: string): number {
+  const target = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil(
+    (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  );
+}
+
+function shiftDate(date: string, days: number): string {
+  const d = new Date(date + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const { statuses, setTaskStatus, autoSkippedCount } = useTaskStatuses();
-  const { completions, hydrated: completionsHydrated } = useCompletions();
-  const { overrides, setOverrides, deactivateNotfall } = useAdaptiveOverrides();
-  const { history, refresh: refreshHistory, acceptProposal, rejectProposal } = useAdaptiveHistory(setOverrides);
-  const { tasks: adaptiveTasks, completeTask: completeAdaptiveTask, uncompleteTask: uncompleteAdaptiveTask } = useAdaptiveTasks();
-
-  // Refresh proposals after auto-skip or after SM-2 hydration check resolves
-  useEffect(() => {
-    if (autoSkippedCount > 0 || completionsHydrated) refreshHistory();
-  }, [autoSkippedCount, completionsHydrated, refreshHistory]);
+  const { config } = usePlanConfig();
+  const { masteries } = useMasteries();
+  const { completions } = useCompletions();
+  const { tasksForDate, allTasks } = useUserTasks();
 
   const today = todayStr();
-  const todayPlan = PLAN_DATA.find((d) => d.date === today);
+  const todayTasks = tasksForDate(today);
 
-  // Adaptive tasks scheduled for today
-  const todayAdaptiveTasks = adaptiveTasks.filter((t) => t.date === today && !t.completed);
+  const categories = useMemo(() => aggregateByCategory(masteries), [masteries]);
+  const overall = useMemo(
+    () => calculateOverallProgress(masteries),
+    [masteries]
+  );
+  const byDate = useMemo(
+    () => aggregateByDate(allTasks, completions),
+    [allTasks, completions]
+  );
 
-  // Carried-over tasks from all past days (not yet completed)
-  const carriedOverTasks = PLAN_DATA
-    .filter((d) => d.date < today)
-    .flatMap((d) =>
-      d.tasks
-        .filter((t) => statuses[t.id]?.carriedOver && !statuses[t.id]?.completed)
-        .map((t) => ({ ...t, originalDate: d.date, originalDay: d.day }))
-    );
+  const last7 = useMemo(() => {
+    const days: Array<{ date: string; minutes: number; label: string }> = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = shiftDate(today, -i);
+      const entry = byDate[d];
+      const dd = new Date(d + "T00:00:00");
+      const labels = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+      days.push({
+        date: d,
+        minutes: entry?.completedMinutes ?? 0,
+        label: labels[dd.getDay()],
+      });
+    }
+    return days;
+  }, [byDate, today]);
 
-  const allTasks = PLAN_DATA.flatMap((d) => d.tasks);
-  const mathTasks = allTasks.filter((t) => t.subject === "math" || (t.subject === "sim" && t.title.includes("Mathe")));
-  const progTasks = allTasks.filter((t) => t.subject === "prog" || (t.subject === "sim" && (t.title.includes("Prog") || t.title.includes("PROG"))));
-  const mathDone = mathTasks.filter((t) => statuses[t.id]?.completed).length;
-  const progDone = progTasks.filter((t) => statuses[t.id]?.completed).length;
-  const mathPercent = mathTasks.length > 0 ? Math.round((mathDone / mathTasks.length) * 100) : 0;
-  const progPercent = progTasks.length > 0 ? Math.round((progDone / progTasks.length) * 100) : 0;
+  const maxMinutes = Math.max(
+    60,
+    ...last7.map((d) => d.minutes)
+  );
 
-  const currentWeek = WEEKS.find((w) => today >= w.start && today <= w.end);
-  const pending = history.filter((p) => p.accepted === undefined);
+  const todayDone = todayTasks.filter((t) => t.completed).length;
+  const todayMinutes = todayTasks.reduce(
+    (s, t) => s + t.durationMinutes,
+    0
+  );
+  const todayDoneMinutes = todayTasks
+    .filter((t) => t.completed)
+    .reduce((s, t) => s + t.durationMinutes, 0);
 
-  const progDays = daysUntil(PROG_EXAM_DATE);
-  const mathDays = daysUntil(MATH_EXAM_DATE);
+  const progDays = config ? daysUntil(config.progExamDate) : null;
+  const mathDays = config ? daysUntil(config.mathExamDate) : null;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Hallo {user?.name}!</h1>
-        <p className="text-muted-foreground">
-          {currentWeek ? `${currentWeek.label} — ${currentWeek.phase}` : "Lernplan"}
+        <h1 className="text-2xl font-bold">
+          Hallo {user?.name ?? "du"}!
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Dein selbst gesteuerter Lernplan zur Matura 2026.
         </p>
       </div>
-
-      {/* Notfall-Modus Banner */}
-      {overrides.notfallMode && (
-        <div className="flex items-start gap-3 p-4 rounded-lg border border-destructive bg-destructive/10">
-          <Zap className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-semibold text-destructive">Notfall-Modus aktiv</p>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Fokus auf Kernthemen (Priorität &quot;hoch&quot;). Niedrigprioritäre Themen vorerst überspringen. Mehr Zeit für Schwachstellen einplanen.
-            </p>
-          </div>
-          <Button variant="ghost" size="icon" className="shrink-0 text-destructive hover:text-destructive" onClick={deactivateNotfall}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
-      {/* Intensivwoche Banner */}
-      {overrides.intensifyWeekUntil && overrides.intensifyWeekUntil >= today && (
-        <div className="flex items-center gap-3 p-4 rounded-lg border border-orange-500/50 bg-orange-500/10">
-          <Coffee className="h-5 w-5 text-orange-500 shrink-0" />
-          <div className="flex-1">
-            <p className="font-semibold text-orange-600 dark:text-orange-400">Intensivwoche aktiv</p>
-            <p className="text-sm text-muted-foreground">
-              Plane +30 Min/Tag bis {new Date(overrides.intensifyWeekUntil + "T00:00:00").toLocaleDateString("de-AT", { day: "numeric", month: "long" })}. Simulationsergebnis war unter Ziel.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Countdowns */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -134,7 +120,13 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Programmieren</p>
               <p className="text-2xl font-bold">
-                {progDays > 0 ? `${progDays} Tage` : progDays === 0 ? "HEUTE!" : "Vorbei"}
+                {progDays === null
+                  ? "—"
+                  : progDays > 0
+                  ? `${progDays} Tage`
+                  : progDays === 0
+                  ? "HEUTE!"
+                  : "Vorbei"}
               </p>
             </div>
           </CardContent>
@@ -147,98 +139,20 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Mathematik</p>
               <p className="text-2xl font-bold">
-                {mathDays > 0 ? `${mathDays} Tage` : mathDays === 0 ? "HEUTE!" : "Vorbei"}
+                {mathDays === null
+                  ? "—"
+                  : mathDays > 0
+                  ? `${mathDays} Tage`
+                  : mathDays === 0
+                  ? "HEUTE!"
+                  : "Vorbei"}
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Progress */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Mathe-Fortschritt</span>
-              <span className="font-medium">{mathPercent}%</span>
-            </div>
-            <Progress value={mathPercent} />
-            <p className="text-xs text-muted-foreground">{mathDone} / {mathTasks.length} Aufgaben</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Prog-Fortschritt</span>
-              <span className="font-medium">{progPercent}%</span>
-            </div>
-            <Progress value={progPercent} />
-            <p className="text-xs text-muted-foreground">{progDone} / {progTasks.length} Aufgaben</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Carried-over tasks */}
-      {carriedOverTasks.length > 0 && (
-        <Card className="border-yellow-500/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg text-yellow-600 dark:text-yellow-400">
-              <RotateCcw className="h-5 w-5" />
-              Nachzuholen ({carriedOverTasks.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {carriedOverTasks.map((task) => {
-              const SUBJECT_STYLES = {
-                math: { variant: "default" as const, label: "Mathe" },
-                prog: { variant: "secondary" as const, label: "Prog" },
-                sim: { variant: "outline" as const, label: "Simulation" },
-              };
-              const style = SUBJECT_STYLES[task.subject];
-              const isDone = statuses[task.id]?.completed;
-              const monthNames = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
-              const d = new Date(task.originalDate + "T00:00:00");
-              const originalLabel = `${task.originalDay} ${d.getDate()}. ${monthNames[d.getMonth()]}`;
-              return (
-                <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
-                  <Checkbox
-                    checked={!!isDone}
-                    onCheckedChange={(checked) =>
-                      setTaskStatus(task.id, {
-                        completed: !!checked,
-                        completedAt: checked ? new Date().toISOString() : undefined,
-                        skipped: false,
-                        carriedOver: !checked,
-                      })
-                    }
-                    className="mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant={style.variant}>{style.label}</Badge>
-                      <span className={`font-medium text-sm ${isDone ? "line-through opacity-50" : ""}`}>{task.title}</span>
-                      <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-400">{originalLabel}</Badge>
-                      <Badge variant="secondary" className="text-xs">{task.time}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
-                  </div>
-                  <Link href={`/tagesplan/${today}`}>
-                    <Button variant="ghost" size="sm" className="shrink-0">
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              );
-            })}
-            <Separator className="my-1" />
-            <p className="text-xs text-muted-foreground">
-              Auf der <Link href={`/tagesplan/${today}`} className="underline">Tagesplan-Seite</Link> findest du alle Details und kannst Aufgaben als erledigt markieren.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Today's Tasks */}
+      {/* Heute */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -248,163 +162,130 @@ export default function DashboardPage() {
             </CardTitle>
             <Link href={`/tagesplan/${today}`}>
               <Button variant="ghost" size="sm">
-                Details <ChevronRight className="h-4 w-4 ml-1" />
+                Zum Tagesplan <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {todayPlan ? (
-            todayPlan.tasks.map((task) => {
-              const style = SUBJECT_STYLES[task.subject];
-              const isDone = statuses[task.id]?.completed;
-              return (
-                <div
-                  key={task.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
-                >
-                  <Checkbox
-                    checked={!!isDone}
-                    onCheckedChange={(checked) =>
-                      setTaskStatus(task.id, {
-                        completed: !!checked,
-                        completedAt: checked ? new Date().toISOString() : undefined,
-                        skipped: false,
-                      })
-                    }
-                    className="mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant={style.variant}>{style.label}</Badge>
-                      <span className={`font-medium text-sm ${isDone ? "line-through opacity-50" : ""}`}>
-                        {task.title}
-                      </span>
-                      <Badge variant="secondary" className="text-xs">{task.time}</Badge>
-                    </div>
-                    <p className={`text-xs text-muted-foreground mt-1 ${isDone ? "line-through opacity-50" : ""}`}>
-                      {task.description}
-                    </p>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
+        <CardContent>
+          {todayTasks.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground text-sm">
               <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Keine Aufgaben für heute</p>
+              Noch keine Aufgaben für heute. Plane deinen Tag im{" "}
+              <Link
+                href={`/tagesplan/${today}`}
+                className="underline hover:text-foreground"
+              >
+                Tagesplan
+              </Link>
+              .
             </div>
-          )}
-          {/* Adaptive tasks for today */}
-          {todayAdaptiveTasks.length > 0 && (
-            <>
-              <Separator className="my-1" />
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="h-3 w-3" /> Adaptiv hinzugefügt
-              </p>
-              {todayAdaptiveTasks.map((t) => (
-                <div key={t.id} className="flex items-start gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
-                  <Checkbox
-                    checked={!!t.completed}
-                    onCheckedChange={(checked) => checked ? completeAdaptiveTask(t.id) : uncompleteAdaptiveTask(t.id)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant={t.subject === "math" ? "default" : "secondary"}>{t.subject === "math" ? "Mathe" : "Prog"}</Badge>
-                      <span className="font-medium text-sm">{t.title}</span>
-                      <Badge variant="secondary" className="text-xs">{t.durationMinutes} Min</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
-                    {t.proposalTrigger && (
-                      <p className="text-xs text-muted-foreground/60 mt-0.5 italic">Auslöser: {t.proposalTrigger}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </>
+          ) : (
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Aufgaben</span>
+                <span className="font-medium">
+                  {todayDone} / {todayTasks.length}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Zeit</span>
+                <span className="font-medium">
+                  {todayDoneMinutes} / {todayMinutes} Min
+                </span>
+              </div>
+              <Progress
+                value={
+                  todayTasks.length > 0
+                    ? (todayDone / todayTasks.length) * 100
+                    : 0
+                }
+              />
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Adaptive Notifications */}
-      {pending.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <AlertTriangle className="h-5 w-5" />
-              Adaptive Vorschläge
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {pending.map((proposal) => {
-              const isOverdueSM2 = proposal.trigger === "sm2_review" &&
-                proposal.changes.some((c) => c.reason?.includes("überfällig"));
+      {/* Gesamtfortschritt */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Gesamtfortschritt</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                Mathe (gewichtete Ø-Mastery)
+              </span>
+              <span className="font-medium">
+                {Math.round(overall.math * 100)}%
+              </span>
+            </div>
+            <Progress value={overall.math * 100} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                Prog (gewichtete Ø-Mastery)
+              </span>
+              <span className="font-medium">
+                {Math.round(overall.prog * 100)}%
+              </span>
+            </div>
+            <Progress value={overall.prog * 100} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bereiche */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">
+            Bereiche
+          </h2>
+          <Link href="/fortschritt">
+            <Button variant="ghost" size="sm" className="gap-1">
+              Drill-down <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+        <CategoryProgressList categories={categories} />
+      </div>
+
+      {/* Letzte 7 Tage */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Letzte 7 Tage</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end justify-between gap-2 h-32">
+            {last7.map((d) => {
+              const h = Math.max(
+                4,
+                Math.round((d.minutes / maxMinutes) * 110)
+              );
               return (
-              <div key={proposal.id} className={`p-3 rounded-lg border bg-muted/50 space-y-2 ${isOverdueSM2 ? "border-destructive" : "border-border"}`}>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-medium">{proposal.triggerDetails}</p>
-                  {isOverdueSM2 && <Badge variant="destructive" className="text-xs">Überfällig</Badge>}
-                </div>
-                <ul className="space-y-1">
-                  {proposal.changes.map((change, i) => (
-                    <li key={i} className="text-xs text-muted-foreground">{change.description}</li>
-                  ))}
-                </ul>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="default" onClick={() => acceptProposal(proposal.id)}>
-                    Akzeptieren
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => rejectProposal(proposal.id)}>
-                    Ablehnen
-                  </Button>
-                </div>
-              </div>
+                <Link
+                  key={d.date}
+                  href={`/tagesplan/${d.date}`}
+                  className="flex-1 flex flex-col items-center gap-1 group"
+                >
+                  <div className="text-xs text-muted-foreground">
+                    {d.minutes > 0 ? `${d.minutes}m` : ""}
+                  </div>
+                  <div
+                    className="w-full rounded-t-md bg-primary/70 group-hover:bg-primary transition-colors"
+                    style={{ height: `${h}px` }}
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    {d.label}
+                  </div>
+                </Link>
               );
             })}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Week Overview */}
-      {currentWeek && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="h-5 w-5" />
-              {currentWeek.label} — {currentWeek.range}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-2">
-              {PLAN_DATA.filter((d) => d.date >= currentWeek.start && d.date <= currentWeek.end).map((day) => {
-                const allDone = day.tasks.length > 0 && day.tasks.every((t) => statuses[t.id]?.completed);
-                const someDone = day.tasks.some((t) => statuses[t.id]?.completed);
-                const allSkipped = day.tasks.length > 0 && day.tasks.every((t) => statuses[t.id]?.skipped);
-                const hasCarryOver = day.tasks.some((t) => statuses[t.id]?.carriedOver && !statuses[t.id]?.completed);
-                const isToday = day.date === today;
-                return (
-                  <Link key={day.date} href={`/tagesplan/${day.date}`}>
-                    <div
-                      className={`p-2 rounded-lg text-center text-xs border transition-colors hover:bg-accent/50 ${
-                        isToday ? "border-primary ring-1 ring-primary" : "border-border"
-                      } ${allDone ? "bg-muted" : someDone ? "bg-accent/50" : allSkipped ? "bg-destructive/10 border-destructive/30" : hasCarryOver ? "bg-yellow-500/10 border-yellow-500/30" : ""}`}
-                    >
-                      <div className={`font-medium ${allSkipped ? "text-destructive" : hasCarryOver ? "text-yellow-600 dark:text-yellow-400" : ""}`}>{day.day}</div>
-                      <div className="text-muted-foreground">
-                        {day.date.slice(8)}
-                      </div>
-                      {allDone && <CheckCircle2 className="h-3 w-3 mx-auto mt-1 text-primary" />}
-                      {allSkipped && <AlertTriangle className="h-3 w-3 mx-auto mt-1 text-destructive" />}
-                      {hasCarryOver && !allSkipped && <AlertTriangle className="h-3 w-3 mx-auto mt-1 text-yellow-500" />}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

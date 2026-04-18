@@ -17,21 +17,22 @@ import {
   Exercise,
   SelfRating,
   Confidence,
+  TaskType,
   SELF_RATING_LABELS,
   CONFIDENCE_LABELS,
   ExerciseCompletion,
 } from "@/lib/types";
 import { useCompletions } from "@/hooks/use-storage";
-import { AlertTriangle } from "lucide-react";
 
 interface Props {
   exercise: Exercise;
   taskId: string;
+  taskType?: TaskType;
   open: boolean;
   onClose: () => void;
 }
 
-export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
+export function AssessmentDialog({ exercise, taskId, taskType, open, onClose }: Props) {
   const { completions, addCompletion } = useCompletions();
   const existing = completions.find((c) => c.exerciseId === exercise.id);
 
@@ -40,7 +41,6 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
   const [confidence, setConfidence] = useState<Confidence>(existing?.confidence ?? "teilweise");
   const [timeSpent, setTimeSpent] = useState(existing?.timeSpentMinutes?.toString() ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");
-  const [proposal, setProposal] = useState<string | null>(null);
 
   function handleSubmit() {
     const achieved = parseFloat(points) || 0;
@@ -50,6 +50,7 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
       id: existing?.id ?? `comp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       exerciseId: exercise.id,
       taskId,
+      taskType: taskType ?? existing?.taskType,
       topicId: exercise.topicId,
       subject: exercise.subject,
       date: new Date().toISOString().split("T")[0],
@@ -63,36 +64,8 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
       notes: notes || undefined,
     };
 
-    const adaptiveResult = addCompletion(completion);
-    if (adaptiveResult) {
-      setProposal(adaptiveResult.changes.map((c) => c.description).join("\n"));
-    } else {
-      onClose();
-    }
-  }
-
-  if (proposal) {
-    return (
-      <Dialog open={open} onOpenChange={() => { setProposal(null); onClose(); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Adaptiver Hinweis
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground whitespace-pre-line">{proposal}</p>
-            <p className="text-xs text-muted-foreground">
-              Du findest alle Vorschläge im Dashboard unter &quot;Adaptive Vorschläge&quot;.
-            </p>
-            <Button className="w-full" onClick={() => { setProposal(null); onClose(); }}>
-              Verstanden
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
+    addCompletion(completion);
+    onClose();
   }
 
   return (
@@ -100,11 +73,12 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">{exercise.label}</DialogTitle>
-          <p className="text-sm text-muted-foreground">Thema: {exercise.topicId} &middot; Max: {exercise.maxPoints} Punkte</p>
+          <p className="text-sm text-muted-foreground">
+            Thema: {exercise.topicId} &middot; Max: {exercise.maxPoints} Punkte
+          </p>
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* Points */}
           <div className="space-y-2">
             <Label>Erreichte Punkte</Label>
             <div className="flex items-center gap-2">
@@ -122,7 +96,6 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
             </div>
           </div>
 
-          {/* Self Assessment */}
           <div className="space-y-2">
             <Label>Selbsteinschätzung</Label>
             <RadioGroup
@@ -141,7 +114,6 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
             </RadioGroup>
           </div>
 
-          {/* Confidence */}
           <div className="space-y-2">
             <Label>Wie sicher warst du?</Label>
             <div className="flex flex-wrap gap-2">
@@ -158,7 +130,6 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
             </div>
           </div>
 
-          {/* Time */}
           <div className="space-y-2">
             <Label>Zeitaufwand (optional)</Label>
             <div className="flex items-center gap-2">
@@ -174,7 +145,6 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
             </div>
           </div>
 
-          {/* Notes */}
           <div className="space-y-2">
             <Label>Notizen (optional)</Label>
             <Textarea
@@ -185,7 +155,6 @@ export function AssessmentDialog({ exercise, taskId, open, onClose }: Props) {
             />
           </div>
 
-          {/* Submit */}
           <Button className="w-full" onClick={handleSubmit}>
             {existing ? "Bewertung aktualisieren" : "Bewertung speichern"}
           </Button>

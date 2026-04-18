@@ -1,5 +1,4 @@
 import { ExerciseCompletion, TopicMastery, Trend } from "../types";
-import { PLAN_DATA } from "../plan-data";
 
 // ═══════════════════════════════════════════════════════════════════
 // Scientific basis:
@@ -50,13 +49,9 @@ const TASK_DIFFICULTY: Record<string, number> = {
   exam:            2.0,   // actual exam
 };
 
-// Build taskId → task-type map once at module load (O(n) scan of PLAN_DATA)
-const TASK_TYPE_BY_ID: Record<string, string> = {};
-for (const day of PLAN_DATA) {
-  for (const task of day.tasks) {
-    TASK_TYPE_BY_ID[task.id] = task.type;
-  }
-}
+// Task type is now recorded on each ExerciseCompletion at completion time
+// (see `taskType` on ExerciseCompletion). When missing on legacy records we
+// default to "neustoff" (mid-difficulty) for IRT adjustment.
 
 // ── Math helpers ──
 function daysBetween(a: string, b: string): number {
@@ -123,7 +118,7 @@ function computeSM2(completions: ExerciseCompletion[]): SM2State {
 // This rewards exceeding expectations on hard items and penalises
 // underperforming on easy ones.
 function irtAdjustedScore(c: ExerciseCompletion, abilityTheta: number): number {
-  const b = TASK_DIFFICULTY[TASK_TYPE_BY_ID[c.taskId] ?? "neustoff"] ?? 0;
+  const b = TASK_DIFFICULTY[c.taskType ?? "neustoff"] ?? 0;
   const expected = sigmoid(abilityTheta - b);
   const adjusted = c.percentScore + (c.percentScore - expected) * IRT_INFLUENCE;
   return Math.max(0, Math.min(1, adjusted));
