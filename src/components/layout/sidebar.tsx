@@ -13,6 +13,7 @@ import {
   Target,
   Sun,
   Moon,
+  BookMarked,
 } from "lucide-react";
 import {
   Sidebar,
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
   { href: "/faecher/mathematik", label: "Mathematik", icon: Calculator },
   { href: "/faecher/programmieren", label: "Programmieren", icon: Code },
   { href: "/simulationen", label: "Simulationen", icon: Target },
+  { href: "/matura-beispiele", label: "Matura-Beispiele", icon: BookMarked },
   { href: "/fortschritt", label: "Fortschritt", icon: BarChart3 },
   { href: "/einstellungen", label: "Einstellungen", icon: Settings },
 ];

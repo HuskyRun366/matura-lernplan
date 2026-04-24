@@ -3,6 +3,23 @@
 Format: `## YYYY-MM-DD — <Kurztitel>`, danach Bullet-Liste (Was / Warum).
 Neueste Änderung oben. Jede Code-Änderung wird hier eingetragen.
 
+## 2026-04-23 — Matura-Beispiele (Vercel Blob) + Dropdown-Fix
+
+- `scripts/sync-matura-pdfs.mjs` (NEU): Einmal-Script, fetcht alle HTL-Klausuren
+  Angewandte Mathematik (HTL 1 = Teil A, HTL 2 = Teil B) von matura.gv.at und
+  lädt sie in Vercel Blob. 13 Collections erkannt, 26 PDFs hochgeladen
+  (Schuljahre 2020–2025, Winter- und Herbsttermin, je Aufgaben + Lösungen).
+- `src/app/api/matura-pdfs/route.ts` (NEU): `GET /api/matura-pdfs` — listet alle
+  Blob-Dateien unter dem Prefix `matura/` als JSON.
+- `src/app/(app)/matura-beispiele/page.tsx` (NEU): Neue Seite, gruppiert die
+  PDFs nach Schuljahr, Termin und Teil (HTL 1/2) mit direkten Blob-Links.
+  `export const dynamic = "force-dynamic"` gesetzt (Blob-Token nur zur Laufzeit).
+- `src/components/layout/sidebar.tsx`: Nav-Eintrag „Matura-Beispiele" (Icon:
+  BookMarked) nach Simulationen eingefügt.
+- `src/components/ui/select.tsx:120`: Focus-Farben in `SelectItem` von
+  `accent`/`accent-foreground` auf `primary`/`primary-foreground` umgestellt —
+  Fix für weißen Text auf weißem Hintergrund im Light Mode (accent ≈ weiß).
+
 ## 2026-04-18 — Vordefinierte Aufgaben im AddTaskDialog + Placeholder-Fix
 
 - `src/components/tagesplan/add-task-dialog.tsx`: Neue Select-Liste
