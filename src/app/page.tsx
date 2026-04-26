@@ -30,8 +30,12 @@ export default function LandingPage() {
       return;
     }
     if (user && !config) {
-      setName(user.name);
-      setStep("plan");
+      const timer = window.setTimeout(() => {
+        setName(user.name);
+        setStep("plan");
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
   }, [user, config, userH, configH, router]);
 

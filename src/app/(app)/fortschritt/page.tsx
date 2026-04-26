@@ -280,7 +280,7 @@ export default function FortschrittPage() {
         <TabsContent value="bereiche" className="space-y-4 mt-4">
           <Card>
             <CardContent className="py-4 text-sm text-muted-foreground">
-              Aggregierte Mastery über alle Themen eines Bereichs. „Am Ziel" =
+              Aggregierte Mastery über alle Themen eines Bereichs. &bdquo;Am Ziel&ldquo; =
               Themen über individueller Zielmarke.
             </CardContent>
           </Card>

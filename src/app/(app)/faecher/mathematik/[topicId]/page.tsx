@@ -4,7 +4,6 @@ import { use } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ExternalLink, BookOpen, CheckCircle2, FlaskConical } from "lucide-react";
 import { MATH_TOPICS } from "@/lib/topics-data";
 import { useMasteries, useCompletions, useUserTasks } from "@/hooks/use-storage";

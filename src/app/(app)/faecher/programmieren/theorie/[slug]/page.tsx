@@ -314,12 +314,16 @@ export default function TheoriePage({
 
   // Load learned state from localStorage
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(`theorie-learned-${slug}`);
-      if (stored) setLearnedSections(new Set(JSON.parse(stored)));
-    } catch {
-      // ignore
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = localStorage.getItem(`theorie-learned-${slug}`);
+        if (stored) setLearnedSections(new Set(JSON.parse(stored)));
+      } catch {
+        // ignore
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [slug]);
 
   const toggleLearned = useCallback(

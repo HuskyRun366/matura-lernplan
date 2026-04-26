@@ -65,21 +65,18 @@ export default function DashboardPage() {
     [allTasks, completions]
   );
 
-  const last7 = useMemo(() => {
-    const days: Array<{ date: string; minutes: number; label: string }> = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = shiftDate(today, -i);
-      const entry = byDate[d];
-      const dd = new Date(d + "T00:00:00");
-      const labels = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-      days.push({
-        date: d,
-        minutes: entry?.completedMinutes ?? 0,
-        label: labels[dd.getDay()],
-      });
-    }
-    return days;
-  }, [byDate, today]);
+  const last7: Array<{ date: string; minutes: number; label: string }> = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = shiftDate(today, -i);
+    const entry = byDate[d];
+    const dd = new Date(d + "T00:00:00");
+    const labels = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+    last7.push({
+      date: d,
+      minutes: entry?.completedMinutes ?? 0,
+      label: labels[dd.getDay()],
+    });
+  }
 
   const maxMinutes = Math.max(
     60,

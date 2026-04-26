@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "import:matura": "node scripts/import-htl2-haupttermin-maturen.mjs",
     "lint": "eslint"
   },
   "dependencies": {

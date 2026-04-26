@@ -18,8 +18,12 @@ import { generateSuggestionsForDate } from "@/lib/suggestions/generator";
 function useSchemaMigration(): boolean {
   const [done, setDone] = useState(false);
   useEffect(() => {
-    storage.runMigrationIfNeeded();
-    setDone(true);
+    const timer = window.setTimeout(() => {
+      storage.runMigrationIfNeeded();
+      setDone(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
   return done;
 }
@@ -35,7 +39,11 @@ function useLocalStorage<T>(
 
   useEffect(() => {
     if (!migrated) return;
-    setState({ data: reader(), hydrated: true });
+    const timer = window.setTimeout(() => {
+      setState({ data: reader(), hydrated: true });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [migrated]);
 
@@ -163,11 +171,10 @@ export function useSimResults() {
 // ── Masteries (derived) ──
 export function useMasteries() {
   const { completions, hydrated } = useCompletions();
-  const [masteries, setMasteries] = useState<Record<string, TopicMastery>>({});
-
-  useEffect(() => {
-    if (hydrated) setMasteries(calculateAllMasteries(completions));
-  }, [completions, hydrated]);
+  const masteries = useMemo<Record<string, TopicMastery>>(
+    () => (hydrated ? calculateAllMasteries(completions) : {}),
+    [completions, hydrated]
+  );
 
   return { masteries, hydrated };
 }
